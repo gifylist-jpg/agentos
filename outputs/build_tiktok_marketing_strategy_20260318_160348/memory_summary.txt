@@ -1,0 +1,41 @@
+Relevant historical task memory:
+
+1. Goal: Build TikTok marketing strategy
+   Task Type: summary
+   Agent: content
+   Status: completed
+   Model: deepseek
+   Token Usage: 0
+   Summary: 
+
+2. Goal: Build TikTok marketing strategy
+   Task Type: video
+   Agent: content
+   Status: completed
+   Model: deepseek
+   Token Usage: 0
+   Summary: 
+
+3. Goal: Build TikTok marketing strategy
+   Task Type: data
+   Agent: data
+   Status: completed
+   Model: deepseek
+   Token Usage: 0
+   Summary: 
+
+4. Goal: Build TikTok marketing strategy
+   Task Type: marketing
+   Agent: marketing
+   Status: completed
+   Model: deepseek
+   Token Usage: 0
+   Summary: 
+
+5. Goal: Build TikTok marketing strategy
+   Task Type: content
+   Agent: content
+   Status: completed
+   Model: deepseek
+   Token Usage: 0
+   Summary:

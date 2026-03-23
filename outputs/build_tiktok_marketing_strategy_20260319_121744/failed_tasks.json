@@ -1,0 +1,19 @@
+[
+  {
+    "id": "task_7",
+    "name": null,
+    "task": "Generate short video campaign concepts for TikTok",
+    "type": "video",
+    "agent": "content",
+    "status": "failed",
+    "retries": 2,
+    "depends_on": [
+      "task_3",
+      "task_4"
+    ],
+    "result": "",
+    "model": null,
+    "model_name": null,
+    "token_usage": 0
+  }
+]

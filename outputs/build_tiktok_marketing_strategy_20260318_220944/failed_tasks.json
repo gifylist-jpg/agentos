@@ -1,0 +1,26 @@
+[
+  {
+    "id": "task_1",
+    "name": null,
+    "type": "research",
+    "agent": "research",
+    "status": "failed",
+    "retries": 2,
+    "depends_on": [],
+    "result": "LLM call failed | provider=deepseek | model=deepseek-chat | error=APIConnectionError('Connection error.')",
+    "model": null,
+    "token_usage": 0
+  },
+  {
+    "id": "task_2",
+    "name": null,
+    "type": "research",
+    "agent": "research",
+    "status": "failed",
+    "retries": 2,
+    "depends_on": [],
+    "result": "LLM call failed | provider=deepseek | model=deepseek-chat | error=APIConnectionError('Connection error.')",
+    "model": null,
+    "token_usage": 0
+  }
+]

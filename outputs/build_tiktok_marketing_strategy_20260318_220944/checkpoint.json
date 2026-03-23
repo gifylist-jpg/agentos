@@ -1,0 +1,122 @@
+{
+  "pending": [
+    {
+      "id": "task_3",
+      "name": null,
+      "task": "Generate content ideas",
+      "type": "content",
+      "agent": "content",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_1",
+        "task_2"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_4",
+      "name": null,
+      "task": "Design TikTok marketing strategy",
+      "type": "marketing",
+      "agent": "marketing",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_1",
+        "task_2"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_5",
+      "name": null,
+      "task": "Define evaluation metrics",
+      "type": "data",
+      "agent": "data",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_6",
+      "name": null,
+      "task": "Summarize the full TikTok strategy into an executive report",
+      "type": "summary",
+      "agent": "content",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4",
+        "task_5"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_7",
+      "name": null,
+      "task": "Generate short video campaign concepts for TikTok",
+      "type": "video",
+      "agent": "content",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    }
+  ],
+  "running": [],
+  "completed": [],
+  "failed": [
+    {
+      "id": "task_1",
+      "name": null,
+      "task": "Research TikTok trends",
+      "type": "research",
+      "agent": "research",
+      "status": "failed",
+      "retries": 2,
+      "depends_on": [],
+      "result": "LLM call failed | provider=deepseek | model=deepseek-chat | error=APIConnectionError('Connection error.')",
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_2",
+      "name": null,
+      "task": "Analyze competitors",
+      "type": "research",
+      "agent": "research",
+      "status": "failed",
+      "retries": 2,
+      "depends_on": [],
+      "result": "LLM call failed | provider=deepseek | model=deepseek-chat | error=APIConnectionError('Connection error.')",
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    }
+  ]
+}

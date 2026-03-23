@@ -1,0 +1,123 @@
+{
+  "pending": [
+    {
+      "id": "task_5",
+      "name": null,
+      "task": "Define evaluation metrics",
+      "type": "data",
+      "agent": "data",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_6",
+      "name": null,
+      "task": "Summarize the full TikTok strategy into an executive report",
+      "type": "summary",
+      "agent": "content",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4",
+        "task_5"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    },
+    {
+      "id": "task_7",
+      "name": null,
+      "task": "Generate short video campaign concepts for TikTok",
+      "type": "video",
+      "agent": "content",
+      "status": "pending",
+      "retries": 0,
+      "depends_on": [
+        "task_3",
+        "task_4"
+      ],
+      "result": null,
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    }
+  ],
+  "running": [],
+  "completed": [
+    {
+      "id": "task_1",
+      "name": null,
+      "task": "Research TikTok trends",
+      "type": "research",
+      "agent": "research",
+      "status": "completed",
+      "retries": 0,
+      "depends_on": [],
+      "result": "**1. Key Findings**\n- **Trend Lifecycle**: TikTok trends now have an accelerated lifecycle, often peaking within 1-2 weeks before fragmenting into niche sub-trends or being replaced.\n- **Core Categories**: Dominant trend categories include:\n    - **Audio-Driven**: Songs or sounds that dictate choreography, comedy skits, or transitions.\n    - **Format/Challenge**: Specific video templates, hashtag challenges, or interactive formats (e.g., \"Get Ready With Me\" variants, \"Hard launch\").\n    - **Narrative & Aesthetic**: Micro-trends built around a shared vibe, story, or visual style (e.g., \"Coquette,\" \"Clean girl\").\n- **Discovery Mechanism**: The \"For You Page\" (FYP) algorithm prioritizes participatory content; trends spread via high-velocity replication and remix, not just viewership.\n- **Commercialization**: Brands increasingly engage through **trendjacking** (authentic participation) and **seeding** (partnering with creators to launch trends).\n\n**2. Important Signals**\n- **Rise of \"Core\" Aesthetics**: Trends are increasingly tied to sustained subcultural identities (e.g., \"STEM girl,\" \"Mob wife\"), offering longer-term engagement niches.\n- **Search & Shop Integration**: TikTok is becoming a discovery engine for products; trends often drive direct consumer searches and purchases.\n- **Authenticity Pressure**: Overly polished or obvious ad content underperforms. Successful participation requires genuine, creator-style execution.\n- **Platform Crossover**: Trends frequently originate on or migrate to Instagram Reels and YouTube Shorts, but TikTok remains the primary ignition point.\n\n**3. Actionable Summary**\nTo leverage TikTok trends effectively:\n- **Monitor Daily**: Use TikTok's Discover page and trending hashtags/sounds to identify trends in their early growth phase (1-5 days in).\n- **Prioritize Participation**: Choose trends that align authentically with your brand voice or content style. Quick, genuine remixes outperform delayed, high-production copies.\n- **Focus on Audio & Hashtags**: Optimize content by using the exact trending sound and core hashtag to maximize algorithmic pickup.\n- **Think Beyond Views**: If commercial, integrate trends with TikTok Shop features or link in bio for conversion. Track not just virality, but engagement and sentiment.\n- **Anticipate Fragmentation**: Be ready to adapt a trending format into a niche relevant to your audience as the trend matures and subdivides.\n\n**Next Steps**: For sustained tracking, consider tools like **TikTok's Creative Center** (public trend data) or third-party platforms like **Pentos** or **TrendHERO** for deeper analytics.",
+      "model": "deepseek",
+      "model_name": null,
+      "token_usage": 615
+    },
+    {
+      "id": "task_2",
+      "name": null,
+      "task": "Analyze competitors",
+      "type": "research",
+      "agent": "research",
+      "status": "completed",
+      "retries": 0,
+      "depends_on": [],
+      "result": "### 1. Key Findings\n- **Market Positioning**: Competitors are segmented into direct (offering similar products/services) and indirect (addressing the same customer needs differently).\n- **Strengths & Weaknesses**: Common strengths include brand recognition and distribution networks; frequent weaknesses involve slower innovation and higher pricing.\n- **Customer Perception**: Reviews and social sentiment highlight gaps in competitor customer service or product features.\n- **Strategic Moves**: Recent trends show competitors investing in digital transformation and sustainability initiatives.\n\n### 2. Important Signals\n- **Emerging Threats**: New entrants leveraging technology (e.g., AI, automation) to disrupt traditional models.\n- **Market Shifts**: Increasing customer preference for personalized experiences and eco-friendly options.\n- **Competitive Vulnerabilities**: Areas where competitors are underperforming (e.g., limited online presence, poor user experience).\n- **Regulatory Changes**: Upcoming regulations that may impact competitor operations or create opportunities.\n\n### 3. Actionable Summary\n- **Short-term**: Conduct a deep-dive SWOT analysis on top 3 competitors; monitor their digital marketing and customer feedback channels weekly.\n- **Mid-term**: Develop a competitive response plan targeting identified weaknesses (e.g., launch a customer service initiative or a feature-rich update).\n- **Long-term**: Invest in innovation (e.g., AI integration, sustainable practices) to differentiate and capture market share from slower-moving competitors.\n- **Monitoring**: Set up alerts for competitor announcements, pricing changes, and regulatory updates to stay agile.",
+      "model": "deepseek",
+      "model_name": null,
+      "token_usage": 363
+    },
+    {
+      "id": "task_4",
+      "name": null,
+      "task": "Design TikTok marketing strategy",
+      "type": "marketing",
+      "agent": "marketing",
+      "status": "completed",
+      "retries": 0,
+      "depends_on": [
+        "task_1",
+        "task_2"
+      ],
+      "result": "# **TikTok Marketing Strategy & Execution Plan**\n\n## **1. Marketing Strategy**\n\n**Core Objective:** Build brand awareness, drive engagement, and convert viewers into customers through authentic, trend-driven content.\n\n**Strategic Pillars:**\n- **Authenticity Over Polish:** Prioritize raw, relatable content that feels native to TikTok.\n- **Trend-Jacking with Purpose:** Leverage trending sounds, challenges, and formats while aligning with brand values.\n- **Community-First Approach:** Foster two-way interaction, user-generated content (UGC), and co-creation.\n- **Value-Driven Content:** Blend entertainment, education, and inspiration relevant to the target audience.\n\n**Brand Voice on TikTok:** Casual, humorous, confident, and helpful. Avoid overly salesy tones.\n\n---\n\n## **2. Promotion Plan**\n\n**Content Mix & Cadence:**\n- **Daily Posts:** 1–2 posts per day to maintain algorithm favor and consistent presence.\n- **Content Ratio:**\n  - 50% Trend-based/Entertainment (using trending audio, memes, challenges)\n  - 30% Educational/How-To (tips, behind-the-scenes, problem-solving)\n  - 20% Promotional (product showcases, testimonials, limited offers)\n\n**Paid Promotion Strategy:**\n- **TopView Ads:** For major launches or campaigns to capture immediate attention.\n- **In-Feed Ads:** Use for driving traffic to website or app installs.\n- **Spark Ads:** Boost high-performing organic posts to extend reach.\n- **Hashtag Challenges:** Create or sponsor branded challenges to encourage UGC.\n- **Collaborations with Creators:** Partner with micro and macro influencers for integrated content.\n\n**Cross-Platform Promotion:**\n- Tease TikTok content on Instagram Stories, Reels, and Twitter.\n- Embed top-performing TikToks in blog posts or email newsletters.\n\n---\n\n## **3. Audience Targeting Suggestions**\n\n**Primary Audience (Example for a lifestyle/beauty brand):**\n- **Demographics:** Ages 18–34, predominantly Gen Z and Millennials, skewing female but inclusive.\n- **Interests:** Beauty, skincare, fashion, wellness, sustainability, DIY, pop culture.\n- **Behaviors:** Active TikTok users who engage with hashtags, follow influencers, participate in challenges.\n\n**Segmentation for Targeted Content:**\n- **Newbies:** Content focused on introductions, basic tutorials, and brand storytelling.\n- **Enthusiasts:** Advanced tips, deep dives, and community-building content.\n- **Advocates:** User-generated features, loyalty rewards, and co-creation opportunities.\n\n**Targeting for Paid Campaigns:**\n- Leverage TikTok's detailed interest and behavior targeting.\n- Use lookalike audiences based on existing customer data or engaged followers.\n- Retarget users who have watched videos, visited the profile, or engaged with previous ads.\n\n---\n\n## **4. Execution Recommendations**\n\n**Content Production:**\n- **Quick & Agile Workflow:** Use smartphones for filming; focus on speed over perfection.\n- **Batch Create Content:** Film multiple videos in one sitting to maintain consistency.\n- **Leverage TikTok Tools:** Use built-in effects, filters, sounds, and text overlays for native feel.\n\n**Engagement & Community Management:**\n- **Respond to Comments:** Reply to comments quickly to boost engagement signals.\n- **Engage with Relevant Content:** Like, comment, and duet/stitch videos from followers and similar accounts.\n- **Host Live Sessions:** Weekly or bi-weekly Q&As, tutorials, or behind-the-scenes live streams.\n\n**Measurement & Optimization:**\n- **Key Metrics:** Video views, engagement rate (likes, comments, shares), follower growth, click-through rate (for links).\n- **Weekly Review:** Analyze top-performing content to identify trends and adjust strategy.\n- **A/B Testing:** Test different captions, sounds, and posting times to optimize performance.\n\n**Team & Resources:**\n- Dedicate at least one team member to content creation and community management.\n- Invest in a basic setup: smartphone, ring light, tripod, and external microphone.\n- Use scheduling tools (like Later or Sprout Social) for planning, but remain flexible for real-time trends.\n\n**Launch Timeline (First 90 Days):**\n- **Month 1:** Establish brand presence, test content styles, and build initial follower base.\n- **Month 2:** Introduce first hashtag challenge or influencer collaboration.\n- **Month 3:** Launch first paid campaign and evaluate overall performance against goals.\n\n---\n\n**Final Note:** TikTok moves fast. Stay adaptable, keep an eye on trends, and always prioritize what resonates with your community over rigid plans.",
+      "model": "deepseek",
+      "model_name": null,
+      "token_usage": 1008
+    }
+  ],
+  "failed": [
+    {
+      "id": "task_3",
+      "name": null,
+      "task": "Generate content ideas",
+      "type": "content",
+      "agent": "content",
+      "status": "failed",
+      "retries": 2,
+      "depends_on": [
+        "task_1",
+        "task_2"
+      ],
+      "result": "",
+      "model": null,
+      "model_name": null,
+      "token_usage": 0
+    }
+  ]
+}

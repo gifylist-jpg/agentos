@@ -1,0 +1,26 @@
+[
+  {
+    "id": "task_1",
+    "name": null,
+    "type": "research",
+    "agent": "research",
+    "status": "failed",
+    "retries": 2,
+    "depends_on": [],
+    "result": "'dict' object has no attribute 'chat'",
+    "model": null,
+    "token_usage": 0
+  },
+  {
+    "id": "task_2",
+    "name": null,
+    "type": "research",
+    "agent": "research",
+    "status": "failed",
+    "retries": 2,
+    "depends_on": [],
+    "result": "'dict' object has no attribute 'chat'",
+    "model": null,
+    "token_usage": 0
+  }
+]

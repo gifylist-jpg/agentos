@@ -1,0 +1,67 @@
+Relevant historical task memory:
+
+1. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 477
+   Score: 95
+   Summary: ### **1. Key Findings**
+- **Market Leaders Identified:** The primary competitors are [Company A] (dominant in [specific feature/segment]), [Company B] (strong in [different segment/geography]), and [Company C] (notable for [pricing/innovation]).
+- **Core Differentiators:** Competitors focus on [e.g.
+
+2. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 498
+   Score: 95
+   Summary: ### 1. Key Findings
+- **Trend Lifecycle**: TikTok trends evolve rapidly, often peaking within 1–4 weeks before fading or evolving into new variations.
+- **Content Formats**: Dominant formats include short-form challenges, audio memes (sounds), hashtag-driven movements, and "core" aesthetics (e.g., c
+
+3. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 500
+   Score: 95
+   Summary: **1. Key Findings**
+- **Trend Lifecycle:** TikTok trends move rapidly, typically peaking within 5-7 days before being replaced. The platform's algorithm prioritizes new, engaging content formats.
+- **Dominant Formats:** Challenges, audio memes (sounds), "get ready with me" (GRWM), "day in the life,"
+
+4. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 590
+   Score: 91
+   Summary: ### 1. Key Findings
+- **Trend Categories**: Trends are dominated by short-form video formats, including dance challenges, lip-syncing, comedy skits, DIY/educational content, and niche aesthetics (e.g., "cottagecore," "dark academia").
+- **Algorithm Drivers**: The "For You" page prioritizes content b
+
+5. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: summary
+   Agent: content
+   Status: completed
+   Model: deepseek
+   Token Usage: 806
+   Score: 91
+   Summary: **TO:** Executive Leadership  
+**FROM:** [Your Name/Department]  
+**DATE:** [Date]  
+**SUBJECT:** Executive Summary – Proposed TikTok Strategy  
+
+---
+
+### **1. OVERVIEW & OBJECTIVES**
+This report outlines a comprehensive TikTok strategy designed to increase brand visibility, engage a younger demogra

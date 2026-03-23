@@ -1,0 +1,69 @@
+Relevant historical task memory:
+
+1. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 500
+   Score: 95
+   Summary: **1. Key Findings**
+- **Trend Lifecycle:** TikTok trends move rapidly, typically peaking within 5-7 days before being replaced. The platform's algorithm prioritizes new, engaging content formats.
+- **Dominant Formats:** Challenges, audio memes (sounds), "get ready with me" (GRWM), "day in the life,"
+
+2. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 616
+   Score: 91
+   Summary: **1. Key Findings**
+- **Trend Lifecycle:** TikTok trends move rapidly, often peaking within 1-2 weeks before fading or evolving. The platform’s algorithm prioritizes new, engaging content.
+- **Core Formats:** Dominant formats include short-form dance/music challenges, "get ready with me" (GRWM), "da
+
+3. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: research
+   Agent: research
+   Status: completed
+   Model: deepseek
+   Token Usage: 615
+   Score: 91
+   Summary: **1. Key Findings**
+- **Trend Lifecycle**: TikTok trends now have an accelerated lifecycle, often peaking within 1-2 weeks before fragmenting into niche sub-trends or being replaced.
+- **Core Categories**: Dominant trend categories include:
+    - **Audio-Driven**: Songs or sounds that dictate choreo
+
+4. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: summary
+   Agent: content
+   Status: completed
+   Model: auto
+   Token Usage: 514
+   Score: 91
+   Summary: # **TikTok Strategy Executive Report**
+
+## **1. Content Ideas**
+
+### **Core Pillars:**
+- **Educational Snippets:** 60-90 second tutorials, "Did You Know?" facts, myth-busting related to our industry.
+- **Behind-the-Scenes (BTS):** Day-in-the-life of team members, product development sneak peeks, off
+
+5. Goal: Build TikTok marketing strategy
+   Similarity Score: 120
+   Task Type: video
+   Agent: content
+   Status: completed
+   Model: auto
+   Token Usage: 724
+   Score: 91
+   Summary: Of course. Here are three distinct, high-potential TikTok video campaign concepts designed for virality, engagement, and brand lift.
+
+---
+
+### **Concept 1: "The 5-Second Life Hack"**
+**Core Idea:** A rapid-fire series showcasing genuinely useful, surprising life hacks using the brand's product in un
