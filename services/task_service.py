@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from audit.audit_logger import AuditLogger
 from guards.guard_manager import GuardManager
 from models.asset import Asset, AssetDependency, AssetVersion
 from models.review import ReviewRecord
@@ -22,6 +23,7 @@ class TaskService:
 
     def __init__(self, db: DatabaseManager) -> None:
         self.db = db
+        self.audit_logger = AuditLogger(db)
         self.state_manager = StateManager(db)
         self.review_service = ReviewService(db, self.state_manager)
         self.asset_service = AssetService(db)
@@ -45,6 +47,14 @@ class TaskService:
             assigned_worker=assigned_worker,
         )
         self.db.save_task(task)
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="task_created",
+            event_data={
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+            },
+        )
         return task
 
     def get_task(self, task_id: str) -> Optional[dict]:
@@ -70,13 +80,26 @@ class TaskService:
             allowed=allowed,
         )
 
-        return self.state_manager.transition_task(
+        old_state = task.current_state
+        transitioned_task = self.state_manager.transition_task(
             task=task,
             new_state=new_state,
             trigger=trigger,
             reason=reason,
             new_substate=new_substate,
         )
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="task_transition",
+            event_data={
+                "task_id": task.task_id,
+                "from_state": old_state,
+                "to_state": new_state,
+                "trigger": trigger,
+                "reason": reason,
+            },
+        )
+        return transitioned_task
 
     def submit_review(
         self,
@@ -85,8 +108,28 @@ class TaskService:
     ) -> Task:
         self.guard_manager.validate_review_contract(task, review)
         self.guard_manager.validate_asset_exists(task.task_id, review.asset_id)
-
-        return self.review_service.submit_review(task, review)
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="review_submission_requested",
+            event_data={
+                "task_id": task.task_id,
+                "asset_id": review.asset_id,
+                "trigger": review.gate_type,
+                "reason": review.reason,
+            },
+        )
+        result_task = self.review_service.submit_review(task, review)
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="review_submission",
+            event_data={
+                "task_id": task.task_id,
+                "asset_id": review.asset_id,
+                "trigger": review.gate_type,
+                "reason": review.reason,
+            },
+        )
+        return result_task
 
     def create_asset(
         self,
@@ -94,11 +137,20 @@ class TaskService:
         asset_type: str,
         status: str = "draft",
     ) -> Asset:
-        return self.asset_service.create_asset(
+        asset = self.asset_service.create_asset(
             task_id=task_id,
             asset_type=asset_type,
             status=status,
         )
+        self.audit_logger.log_event(
+            task_id=task_id,
+            event_type="asset_created",
+            event_data={
+                "task_id": task_id,
+                "asset_id": asset.asset_id,
+            },
+        )
+        return asset
 
     def create_asset_version(
         self,
@@ -107,12 +159,20 @@ class TaskService:
         data: Dict[str, Any],
         created_by: str,
     ) -> AssetVersion:
-        return self.asset_service.create_asset_version(
+        asset_version = self.asset_service.create_asset_version(
             asset_id=asset_id,
             version=version,
             data=data,
             created_by=created_by,
         )
+        self.audit_logger.log_event(
+            task_id="",
+            event_type="asset_version_created",
+            event_data={
+                "asset_id": asset_id,
+            },
+        )
+        return asset_version
 
     def add_asset_dependency(
         self,
@@ -124,11 +184,20 @@ class TaskService:
         self.guard_manager.validate_asset_exists(task_id, asset_id)
         self.guard_manager.validate_asset_exists(task_id, depends_on)
 
-        return self.asset_service.add_dependency(
+        dependency = self.asset_service.add_dependency(
             asset_id=asset_id,
             depends_on=depends_on,
             relation_type=relation_type,
         )
+        self.audit_logger.log_event(
+            task_id=task_id,
+            event_type="asset_dependency_added",
+            event_data={
+                "asset_id": asset_id,
+                "depends_on": depends_on,
+            },
+        )
+        return dependency
 
     def update_asset_status(
         self,
@@ -136,3 +205,11 @@ class TaskService:
         new_status: str,
     ) -> None:
         self.asset_service.update_asset_status(asset_id, new_status)
+        self.audit_logger.log_event(
+            task_id="",
+            event_type="asset_status_updated",
+            event_data={
+                "asset_id": asset_id,
+                "new_status": new_status,
+            },
+        )
