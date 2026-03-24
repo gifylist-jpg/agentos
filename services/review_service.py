@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from audit.audit_logger import AuditLogger
 from models.review import ReviewRecord
 from models.task import Task
 from services.state_manager import StateManager
@@ -15,6 +16,7 @@ class ReviewService:
     def __init__(self, db: DatabaseManager, state_manager: StateManager) -> None:
         self.db = db
         self.state_manager = state_manager
+        self.audit_logger = AuditLogger(db)
 
     def submit_review(self, task: Task, review: ReviewRecord) -> Task:
         """
@@ -25,19 +27,48 @@ class ReviewService:
         gate_type = review.gate_type
         review_status = review.review_status
 
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="review_submitted",
+            event_data=self._build_review_event_payload(task, review),
+        )
+
         if gate_type == "script":
-            return self._handle_script_review(task, review_status, review)
+            result_task = self._handle_script_review(task, review_status, review)
+        elif gate_type == "clip":
+            result_task = self._handle_clip_review(task, review_status, review)
+        elif gate_type == "rough_cut":
+            result_task = self._handle_rough_cut_review(task, review_status, review)
+        elif gate_type == "final":
+            result_task = self._handle_final_review(task, review_status, review)
+        else:
+            raise ValueError(f"Unsupported gate_type: {gate_type}")
 
-        if gate_type == "clip":
-            return self._handle_clip_review(task, review_status, review)
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="review_result",
+            event_data=self._build_review_event_payload(task, review),
+        )
 
-        if gate_type == "rough_cut":
-            return self._handle_rough_cut_review(task, review_status, review)
+        return result_task
 
-        if gate_type == "final":
-            return self._handle_final_review(task, review_status, review)
+    def _build_review_event_payload(
+        self,
+        task: Task,
+        review: ReviewRecord,
+    ) -> dict[str, str]:
+        review_type = review.gate_type
+        if review_type == "rough_cut":
+            review_type = "clip"
 
-        raise ValueError(f"Unsupported gate_type: {gate_type}")
+        reviewer = "human" if review.review_mode == "human" else "AI"
+
+        return {
+            "task_id": task.task_id,
+            "review_type": review_type,
+            "review_status": review.review_status,
+            "reviewer": reviewer,
+        }
 
     def _handle_script_review(
         self,
