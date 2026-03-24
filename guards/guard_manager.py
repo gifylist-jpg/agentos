@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from audit.audit_logger import AuditLogger
 from models.guard import GuardFailure
 from models.review import ReviewRecord
 from models.task import Task
@@ -21,6 +22,7 @@ class GuardManager:
 
     def __init__(self, db: DatabaseManager) -> None:
         self.db = db
+        self.audit_logger = AuditLogger(db)
 
     def _record_failure(
         self,
@@ -40,6 +42,15 @@ class GuardManager:
             action_taken=action_taken,
         )
         self.db.save_guard_failure(failure)
+        self.audit_logger.log_event(
+            task_id=task_id,
+            event_type="guard_failure",
+            event_data={
+                "rule": guard_type,
+                "severity": severity,
+                "task_id": task_id,
+            },
+        )
         return failure
 
     def validate_state_transition(
