@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
 # Virtual env
 venv/
@@ -12,13 +13,6 @@ logs/
 # Outputs
 outputs/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
 # Env
 .env
 
@@ -30,3 +24,11 @@ memory/*.json
 
 # Runtime state
 runtime/state/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
