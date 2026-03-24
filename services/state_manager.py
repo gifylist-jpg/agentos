@@ -5,6 +5,7 @@ from typing import Dict, Set
 from core.exceptions import StateTransitionError
 from models.task import Task, TaskStateHistory
 from models.recovery import RecoveryRecord
+from audit.audit_logger import AuditLogger
 from storage.db import DatabaseManager
 
 
@@ -27,6 +28,7 @@ class StateManager:
 
     def __init__(self, db: DatabaseManager) -> None:
         self.db = db
+        self.audit_logger = AuditLogger(db)
 
     def can_transition(self, from_state: str, to_state: str) -> bool:
         allowed = self.ALLOWED_TRANSITIONS.get(from_state, set())
@@ -60,6 +62,18 @@ class StateManager:
             reason=reason,
         )
         self.db.save_task_state_history(history)
+
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="state_change",
+            event_data={
+                "task_id": task.task_id,
+                "from_state": old_state,
+                "to_state": new_state,
+                "trigger": trigger,
+                "reason": reason,
+            },
+        )
 
         return task
 
@@ -99,5 +113,18 @@ class StateManager:
             triggered_by=triggered_by,
         )
         self.db.save_recovery_record(recovery)
+
+        self.audit_logger.log_event(
+            task_id=task.task_id,
+            event_type="recovery",
+            event_data={
+                "task_id": task.task_id,
+                "from_state": old_state,
+                "to_state": rollback_to,
+                "trigger": "guard" if triggered_by == "guard" else "system",
+                "reason": reason,
+                "triggered_by": triggered_by,
+            },
+        )
 
         return task
