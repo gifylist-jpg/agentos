@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from agentos.schemas.invariant_checker import check_analysis_invariants
 from typing import List, Dict, Any, Optional, Tuple
+from agentos.schemas.validator import validate_analysis_output
 from collections import defaultdict
 import time
 import uuid
@@ -240,6 +242,7 @@ class PerformanceAnalysisAgent:
                     should_freeze_task=False,
                     freeze_reason=None,
                 )
+                check_analysis_invariants(result)                
                 results.append(result)
                 continue
 
@@ -314,15 +317,18 @@ class PerformanceAnalysisAgent:
 
         global_action = self._global_decision(results)
 
-        return PerformanceAnalysisOutput(
-            analysis_id=str(uuid.uuid4()),
-            strategy_id=input_data.strategy_id,
-            product_id=input_data.product_id,
-            asset_results=results,
-            recommended_next_action=global_action,
-            summary="analysis_v32_completed"
-        )
+        output = PerformanceAnalysisOutput(
+                analysis_id=str(uuid.uuid4()),
+                strategy_id=input_data.strategy_id,
+                product_id=input_data.product_id,
+                asset_results=results,
+                recommended_next_action=global_action,
+                summary="analysis_v32_completed"
+         )
 
+        validate_analysis_output(output)
+
+        return output
     # =========================================================
     # 聚合层
     # =========================================================
