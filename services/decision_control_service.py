@@ -1,69 +1,44 @@
-from control.decision_record import DecisionRecord
-from control.review_gate import ReviewGate
-from control.freeze_gate import FreezeGate
+from __future__ import annotations
+
+from dataclasses import asdict
+from typing import Any, Dict
+
+from agentos.schemas.analysis import AssetAnalysisResult
+from agentos.schemas.control import (
+    DecisionRecord,
+    ReviewResult,
+    FreezeResult,
+    ControlOutcome,
+)
+from agentos.schemas.control_fsm import map_to_control_outcome
+from services.analysis_control_adapter import build_decision_record
 
 
 class DecisionControlService:
-    """
-    Service Layer adapter:
-    - 接收 Analysis 的 DecisionResult
-    - 生成 DecisionRecord
-    - 调用 ReviewGate / FreezeGate
-    - 输出统一控制结果
-    """
-
-    def __init__(self):
-        self.review_gate = ReviewGate()
-        self.freeze_gate = FreezeGate()
-
-    def process_analysis_result(self, task_id, variant_id, analysis_result):
-        decision = DecisionRecord(
+    def process(self, task_id: str, asset_result: AssetAnalysisResult) -> Dict[str, Any]:
+        decision_record: DecisionRecord = build_decision_record(
             task_id=task_id,
-            variant_id=variant_id,
-            action=analysis_result.summary.action,
-            decision_type=analysis_result.summary.decision_type,
-            confidence=analysis_result.confidence,
-            review_required=analysis_result.summary.review_required,
-            freeze_candidate=analysis_result.summary.freeze_candidate,
-            memory_admission_candidate=analysis_result.summary.memory_admission_candidate,
-            diagnostics=analysis_result.diagnostics.__dict__,
-            metadata={
-                "recommended_next_step": analysis_result.summary.recommended_next_step,
-                "baseline_scope": analysis_result.summary.baseline_scope,
-                "publish_scope": analysis_result.summary.publish_scope,
-                "source": analysis_result.source,
-            },
+            asset_result=asset_result,
         )
 
-        review_result = self.review_gate.evaluate(decision)
-        freeze_result = self.freeze_gate.evaluate(decision)
+        review_result = ReviewResult(
+            blocked=decision_record.review_required,
+            reason="review_required=True" if decision_record.review_required else None,
+        )
+
+        freeze_result = FreezeResult(
+            frozen=decision_record.freeze_candidate,
+            reason="freeze_candidate=True" if decision_record.freeze_candidate else None,
+        )
+
+        control_outcome: ControlOutcome = map_to_control_outcome(
+            review_required=decision_record.review_required,
+            freeze_candidate=decision_record.freeze_candidate,
+        )
 
         return {
-            "decision_record": decision,
-            "review_result": review_result,
-            "freeze_result": freeze_result,
-            "control_outcome": self._derive_control_outcome(
-                decision, review_result, freeze_result
-            ),
-        }
-
-    def _derive_control_outcome(self, decision, review_result, freeze_result):
-        if freeze_result["frozen"]:
-            return {
-                "status": "FROZEN",
-                "next_step": "stop automation and inspect task",
-                "reason": freeze_result["reason"],
-            }
-
-        if review_result["blocked"]:
-            return {
-                "status": "REVIEW_REQUIRED",
-                "next_step": "route to human review",
-                "reason": review_result["reason"],
-            }
-
-        return {
-            "status": "PASS",
-            "next_step": decision.metadata.get("recommended_next_step", "no-op"),
-            "reason": None,
+            "decision_record": asdict(decision_record),
+            "review_result": asdict(review_result),
+            "freeze_result": asdict(freeze_result),
+            "control_outcome": asdict(control_outcome),
         }
