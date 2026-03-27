@@ -7,14 +7,22 @@ from guards.guard_manager import GuardManager
 from models.asset import Asset, AssetDependency, AssetVersion
 from models.review import ReviewRecord
 from models.task import Task
+from core.publish_record import PublishRecord
+from core.performance_snapshot import PerformanceSnapshot
+from services.feedback_builder import FeedbackBuilder, BaselineReference
 from services.alert_service import AlertService
 from services.asset_service import AssetService
 from services.recovery_policy import RecoveryPolicy
 from services.review_service import ReviewService
 from services.state_manager import StateManager
+from services.decision_control_service import DecisionControlService
 from services.stuck_task_detector import StuckTaskDetector
 from services.stuck_task_handler import StuckTaskHandler
 from storage.db import DatabaseManager
+from agents.performance_analysis_agent import PerformanceAnalysisInput, AssetPerformanceSnapshot
+from agents.performance_analysis_agent import PerformanceAnalysisAgent
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional
 
 
 class TaskService:
@@ -31,6 +39,8 @@ class TaskService:
         self.review_service = ReviewService(db, self.state_manager)
         self.asset_service = AssetService(db)
         self.guard_manager = GuardManager(db)
+        self.decision_control_service = DecisionControlService()
+        self.feedback_builder = FeedbackBuilder()
 
         self.audit_logger = AuditLogger(db)
         self.alert_service = AlertService(audit_logger=self.audit_logger)
@@ -41,6 +51,213 @@ class TaskService:
             alert_service=self.alert_service,
             recovery_policy=self.recovery_policy,
         )
+    def apply_decision_control_to_feedback(
+        self,
+        task,
+        analysis_result,
+        feedback_result=None,
+        aggregate=None,
+    ):
+        result = dict(feedback_result or {})
+
+        if "analysis_result" not in result:
+            result["analysis_result"] = analysis_result
+
+        variant_id = (
+            getattr(aggregate, "variant_id", None)
+            or result.get("variant_id")
+            or "default_variant"
+        )
+
+        control_bundle = self.decision_control_service.process_analysis_result(
+            task_id=task.task_id,
+            variant_id=variant_id,
+            analysis_result=analysis_result,
+        )
+
+        result["decision_record"] = control_bundle["decision_record"].to_dict()
+        result["review_result"] = control_bundle["review_result"]
+        result["freeze_result"] = control_bundle["freeze_result"]
+        result["control_outcome"] = control_bundle["control_outcome"]
+
+        return result
+
+    def _adapt_asset_result_for_control(
+        self,
+        asset_result,
+        publish_record,
+    ):
+        """
+        临时桥接：
+        把 PerformanceAnalysisAgent v3.2 的 AssetAnalysisResult
+        适配成 DecisionControlService 需要的结构。
+        """
+
+        # suggestion -> action / decision_type / next_step
+        if asset_result.suggestion == "WAIT_MORE_DATA":
+            action = "WAIT_MORE_DATA"
+            decision_type = "observation_only"
+            recommended_next_step = "collect more snapshots before judging"
+        elif asset_result.suggestion in ("AMPLIFY_CANDIDATE",):
+            action = "SCALE_CANDIDATE"
+            decision_type = "scale_candidate"
+            recommended_next_step = "prepare controlled scale validation"
+        elif asset_result.needs_human_review:
+            action = "HUMAN_REVIEW"
+            decision_type = "review_gate"
+            recommended_next_step = "send to human review before any scale decision"
+        elif asset_result.suggestion in (
+            "RETEST_SAME_ANGLE_NEW_HOOK",
+            "RETEST_SAME_HOOK_NEW_CTA",
+        ):
+            action = "RETEST"
+            decision_type = "retest_candidate"
+            recommended_next_step = "retest with adjusted variant or context"
+        elif asset_result.suggestion in ("KEEP_OBSERVING", "KEEP"):
+            action = "KEEP_OBSERVING"
+            decision_type = "observation_only"
+            recommended_next_step = "keep observing without strong intervention"
+        else:
+            action = "RETEST"
+            decision_type = "analysis_output"
+            recommended_next_step = "retest with adjusted variant or context"
+
+        diagnostics = SimpleNamespace(
+            stage=asset_result.stage,
+            signal_status=asset_result.signal_status,
+            environment_noise=asset_result.environment_noise.upper(),
+            causal_confidence=asset_result.causal_confidence.upper(),
+            distribution_status=asset_result.distribution_status,
+            creative_status=asset_result.creative_status,
+            commercial_status=asset_result.commercial_status,
+            reasons=[asset_result.reason] if asset_result.reason else [],
+            flags=[],
+        )
+
+        summary = SimpleNamespace(
+            action=action,
+            decision_type=decision_type,
+            recommended_next_step=recommended_next_step,
+            review_required=asset_result.needs_human_review,
+            freeze_candidate=asset_result.should_freeze_task,
+            memory_admission_candidate=asset_result.memory_admission_ready,
+            baseline_scope=publish_record.publish_mode,
+            publish_scope=f"{publish_record.publish_mode}:{publish_record.account_id}:{publish_record.product_id}",
+        )
+
+        # 粗略 confidence 映射
+        if asset_result.causal_confidence == "high":
+            confidence = "HIGH"
+        elif asset_result.causal_confidence == "medium":
+            confidence = "MEDIUM"
+        else:
+            confidence = "LOW"
+
+        return SimpleNamespace(
+            summary=summary,
+            diagnostics=diagnostics,
+            confidence=confidence,
+            source="analysis_agent",
+        )
+
+    def run_feedback_loop(
+        self,
+        task: Task,
+        publish_record: PublishRecord,
+        snapshots: List[PerformanceSnapshot],
+        baseline: BaselineReference,
+        analysis_agent: PerformanceAnalysisAgent,
+    ) -> Dict[str, Any]:
+        """
+        Minimal structured feedback loop:
+
+        PublishRecord + Snapshots + Baseline
+        -> FeedbackBuilder
+        -> PerformanceAnalysisInput
+        -> Analysis
+        -> Decision Control
+        -> feedback_result
+        """
+
+        feedback_bundle = self.feedback_builder.build_feedback_bundle(
+            publish_record=publish_record,
+            snapshots=snapshots,
+            baseline=baseline,
+        )
+
+        aggregate = feedback_bundle.aggregate
+
+        analysis_snapshots: List[AssetPerformanceSnapshot] = []
+
+        for snap in snapshots:
+            analysis_snapshots.append(
+                AssetPerformanceSnapshot(
+                    asset_id=publish_record.publish_id,
+                    variant_id=publish_record.variant_id,
+                    metrics={
+                        "ctr": snap.ctr,
+                        "watch_rate": snap.completion_rate,
+                        "avg_watch_time": snap.watch_time,
+                        "views": snap.impressions,
+                        "cvr": snap.cvr,
+                    },
+                    timestamp=snap.captured_at.timestamp(),
+                    publish_mode=publish_record.publish_mode,
+                    account_id=publish_record.account_id,
+                )
+            )
+
+        scoped_baseline = {
+            baseline.baseline_scope: {
+                "product": (
+                    baseline.ads_baseline
+                    if baseline.baseline_scope == "ads"
+                    else baseline.organic_baseline
+                )
+            }
+        }
+
+        analysis_input = PerformanceAnalysisInput(
+            product_id=publish_record.product_id,
+            strategy_id=task.task_id,
+            snapshots=analysis_snapshots,
+            baseline=scoped_baseline,
+        )
+
+        analysis_output = analysis_agent.analyze(analysis_input)
+
+        if not analysis_output.asset_results:
+            feedback_result = {
+                "analysis_result": analysis_output,
+                "decision_record": None,
+                "review_result": None,
+                "freeze_result": None,
+                "control_outcome": {
+                    "status": "NO_RESULT",
+                    "next_step": "no analysis result available",
+                    "reason": "EMPTY_ASSET_RESULTS",
+                },
+            }
+            return feedback_result
+
+        primary_asset_result = analysis_output.asset_results[0]
+        adapted_analysis_result = self._adapt_asset_result_for_control(
+            asset_result=primary_asset_result,
+            publish_record=publish_record,
+        )
+
+        feedback_result = {
+            "analysis_result": analysis_output,
+            "primary_asset_result": primary_asset_result,
+        }
+
+        feedback_result = self.apply_decision_control_to_feedback(
+            task=task,
+            analysis_result=adapted_analysis_result,
+            feedback_result=feedback_result,
+            aggregate=aggregate,
+        )
+        return feedback_result
 
     def create_task(
         self,
