@@ -19,6 +19,7 @@ from services.decision_control_service import DecisionControlService
 from services.stuck_task_detector import StuckTaskDetector
 from services.stuck_task_handler import StuckTaskHandler
 from storage.db import DatabaseManager
+from agentos.schemas.feedback_validator import validate_feedback_result
 from agents.performance_analysis_agent import PerformanceAnalysisInput, AssetPerformanceSnapshot
 from agents.performance_analysis_agent import PerformanceAnalysisAgent
 from types import SimpleNamespace
@@ -238,6 +239,9 @@ class TaskService:
                     "reason": "EMPTY_ASSET_RESULTS",
                 },
             }
+            
+            validate_feedback_result(feedback_result)
+
             return feedback_result
 
         primary_asset_result = analysis_output.asset_results[0]
@@ -381,4 +385,7 @@ class TaskService:
         - does NOT auto-recover
         - only returns structured handling suggestions
         """
+        from agentos.schemas.feedback_validator import validate_feedback_result
+
+        validate_feedback_result(feedback_result)
         return self.stuck_task_handler.handle(tasks)
