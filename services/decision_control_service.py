@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Dict
 
+from agentos.schemas.control_invariant_checker import check_control_invariants
 from agentos.schemas.analysis import AssetAnalysisResult
 from agentos.schemas.control import (
     DecisionRecord,
@@ -35,6 +36,8 @@ class DecisionControlService:
             review_required=decision_record.review_required,
             freeze_candidate=decision_record.freeze_candidate,
         )
+
+        check_control_invariants(asdict(control_outcome), decision_record)
 
         return {
             "decision_record": asdict(decision_record),
