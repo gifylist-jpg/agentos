@@ -23,7 +23,6 @@ from core.system_guard import assert_valid_control_outcome, assert_has_required_
 from agentos.schemas.feedback_validator import validate_feedback_result
 from agents.performance_analysis_agent import PerformanceAnalysisInput, AssetPerformanceSnapshot
 from agents.performance_analysis_agent import PerformanceAnalysisAgent
-from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 
 
@@ -53,37 +52,6 @@ class TaskService:
             alert_service=self.alert_service,
             recovery_policy=self.recovery_policy,
         )
-    def apply_decision_control_to_feedback(
-        self,
-        task,
-        analysis_result,
-        feedback_result=None,
-        aggregate=None,
-    ):
-        result = dict(feedback_result or {})
-
-        if "analysis_result" not in result:
-            result["analysis_result"] = analysis_result
-
-        variant_id = (
-            getattr(aggregate, "variant_id", None)
-            or result.get("variant_id")
-            or "default_variant"
-        )
-
-        control_bundle = self.decision_control_service.process(
-            task_id=task.task_id,
-            asset_result=analysis_result,
-        
-)
-        assert_valid_control_outcome(control_bundle["control_outcome"])
-
-        result["decision_record"] = control_bundle["decision_record"].to_dict()
-        result["review_result"] = control_bundle["review_result"]
-        result["freeze_result"] = control_bundle["freeze_result"]
-        result["control_outcome"] = control_bundle["control_outcome"]
-
-        return result
 
     def _select_primary_asset_result(self, asset_results, publish_record):
         for r in asset_results:
@@ -131,43 +99,6 @@ class TaskService:
             decision_type = "analysis_output"
             recommended_next_step = "retest with adjusted variant or context"
 
-        diagnostics = SimpleNamespace(
-            stage=asset_result.stage,
-            signal_status=asset_result.signal_status,
-            environment_noise=asset_result.environment_noise.upper(),
-            causal_confidence=asset_result.causal_confidence.upper(),
-            distribution_status=asset_result.distribution_status,
-            creative_status=asset_result.creative_status,
-            commercial_status=asset_result.commercial_status,
-            reasons=[asset_result.reason] if asset_result.reason else [],
-            flags=[],
-        )
-
-        summary = SimpleNamespace(
-            action=action,
-            decision_type=decision_type,
-            recommended_next_step=recommended_next_step,
-            review_required=asset_result.needs_human_review,
-            freeze_candidate=asset_result.should_freeze_task,
-            memory_admission_candidate=asset_result.memory_admission_ready,
-            baseline_scope=publish_record.publish_mode,
-            publish_scope=f"{publish_record.publish_mode}:{publish_record.account_id}:{publish_record.product_id}",
-        )
-
-        # 粗略 confidence 映射
-        if asset_result.causal_confidence == "high":
-            confidence = "HIGH"
-        elif asset_result.causal_confidence == "medium":
-            confidence = "MEDIUM"
-        else:
-            confidence = "LOW"
-
-        return SimpleNamespace(
-            summary=summary,
-            diagnostics=diagnostics,
-            confidence=confidence,
-            source="analysis_agent",
-        )
 
     def run_feedback_loop(
         self,
