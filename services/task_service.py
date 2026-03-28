@@ -71,11 +71,11 @@ class TaskService:
             or "default_variant"
         )
 
-        control_bundle = self.decision_control_service.process_analysis_result(
+        control_bundle = self.decision_control_service.process(
             task_id=task.task_id,
-            variant_id=variant_id,
-            analysis_result=analysis_result,
-        )
+            asset_result=analysis_result,
+        
+)
         assert_valid_control_outcome(control_bundle["control_outcome"])
 
         result["decision_record"] = control_bundle["decision_record"].to_dict()
@@ -84,6 +84,12 @@ class TaskService:
         result["control_outcome"] = control_bundle["control_outcome"]
 
         return result
+
+    def _select_primary_asset_result(self, asset_results, publish_record):
+        for r in asset_results:
+            if r.variant_id == publish_record.variant_id:
+                return r
+        return asset_results[0] if asset_results else None
 
     def _adapt_asset_result_for_control(
         self,
@@ -241,29 +247,32 @@ class TaskService:
                     "reason": "EMPTY_ASSET_RESULTS",
                 },
             }
-            
+
             assert_has_required_feedback_fields(feedback_result)
             validate_feedback_result(feedback_result)
 
             return feedback_result
 
-        primary_asset_result = analysis_output.asset_results[0]
-        adapted_analysis_result = self._adapt_asset_result_for_control(
+        primary_asset_result = self._select_primary_asset_result(
+            analysis_output.asset_results,
+            publish_record,
+        )
+
+        control_bundle = self.decision_control_service.process(
+            task_id=task.task_id,
             asset_result=primary_asset_result,
-            publish_record=publish_record,
         )
 
         feedback_result = {
             "analysis_result": analysis_output,
             "primary_asset_result": primary_asset_result,
+            "decision_record": control_bundle["decision_record"],
+            "review_result": control_bundle["review_result"],
+            "freeze_result": control_bundle["freeze_result"],
+            "control_outcome": control_bundle["control_outcome"],
         }
 
-        feedback_result = self.apply_decision_control_to_feedback(
-            task=task,
-            analysis_result=adapted_analysis_result,
-            feedback_result=feedback_result,
-            aggregate=aggregate,
-        )
+        validate_feedback_result(feedback_result)
         return feedback_result
 
     def create_task(

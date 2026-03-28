@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from agentos.schemas.analysis import AssetAnalysisResult, PerformanceAnalysisOutput
 from agentos.schemas.invariant_checker import check_analysis_invariants
 from typing import List, Dict, Any, Optional, Tuple
 from agentos.schemas.validator import validate_analysis_output
@@ -150,52 +151,6 @@ class VariantAggregate:
 # 输出结构
 # =========================================================
 
-@dataclass
-class AssetAnalysisResult:
-    asset_id: str
-    variant_id: str
-
-    stage: str
-    signal_status: str
-
-    distribution_status: str
-    creative_status: str
-    commercial_status: str
-
-    causal_confidence: str
-    comparison_quality: str
-    environment_noise: str
-
-    data_trust: str
-    data_status: str
-    freshness_level: str
-
-    suggestion: str
-    reason: str
-
-    memory_candidate: bool
-    memory_admission_ready: bool
-
-    needs_human_review: bool
-    review_reason: Optional[str] = None
-
-    should_freeze_task: bool = False
-    freeze_reason: Optional[str] = None
-
-
-@dataclass
-class PerformanceAnalysisOutput:
-    analysis_id: str
-    strategy_id: str
-    product_id: str
-    asset_results: List[AssetAnalysisResult]
-    recommended_next_action: str
-    summary: str
-
-
-# =========================================================
-# 主 Agent
-# =========================================================
 
 class PerformanceAnalysisAgent:
     """
@@ -219,29 +174,7 @@ class PerformanceAnalysisAgent:
             causal_confidence = self._judge_causal_confidence(agg, signal_status, environment_noise)
 
             if not self._can_decide(agg, signal_status):
-                result = AssetAnalysisResult(
-                    asset_id=agg.asset_id,
-                    variant_id=agg.variant_id,
-                    stage=stage,
-                    signal_status=signal_status,
-                    distribution_status="unknown",
-                    creative_status="unknown",
-                    commercial_status="unknown",
-                    causal_confidence=causal_confidence,
-                    comparison_quality=agg.comparison_quality,
-                    environment_noise=environment_noise,
-                    data_trust=agg.data_trust,
-                    data_status=agg.data_status,
-                    freshness_level=agg.freshness_level,
-                    suggestion=Suggestion.WAIT_MORE_DATA,
-                    reason="数据未成熟 / 不完整 / 不新鲜，禁止进入强判断",
-                    memory_candidate=False,
-                    memory_admission_ready=False,
-                    needs_human_review=False,
-                    review_reason=None,
-                    should_freeze_task=False,
-                    freeze_reason=None,
-                )
+                
                 check_analysis_invariants(result)                
                 results.append(result)
                 continue
@@ -299,7 +232,6 @@ class PerformanceAnalysisAgent:
                 creative_status=creative_status,
                 commercial_status=commercial_status,
                 causal_confidence=causal_confidence,
-                comparison_quality=agg.comparison_quality,
                 environment_noise=environment_noise,
                 data_trust=agg.data_trust,
                 data_status=agg.data_status,
