@@ -59,46 +59,6 @@ class TaskService:
                 return r
         return asset_results[0] if asset_results else None
 
-    def _adapt_asset_result_for_control(
-        self,
-        asset_result,
-        publish_record,
-    ):
-        """
-        临时桥接：
-        把 PerformanceAnalysisAgent v3.2 的 AssetAnalysisResult
-        适配成 DecisionControlService 需要的结构。
-        """
-
-        # suggestion -> action / decision_type / next_step
-        if asset_result.suggestion == "WAIT_MORE_DATA":
-            action = "WAIT_MORE_DATA"
-            decision_type = "observation_only"
-            recommended_next_step = "collect more snapshots before judging"
-        elif asset_result.suggestion in ("AMPLIFY_CANDIDATE",):
-            action = "SCALE_CANDIDATE"
-            decision_type = "scale_candidate"
-            recommended_next_step = "prepare controlled scale validation"
-        elif asset_result.needs_human_review:
-            action = "HUMAN_REVIEW"
-            decision_type = "review_gate"
-            recommended_next_step = "send to human review before any scale decision"
-        elif asset_result.suggestion in (
-            "RETEST_SAME_ANGLE_NEW_HOOK",
-            "RETEST_SAME_HOOK_NEW_CTA",
-        ):
-            action = "RETEST"
-            decision_type = "retest_candidate"
-            recommended_next_step = "retest with adjusted variant or context"
-        elif asset_result.suggestion in ("KEEP_OBSERVING", "KEEP"):
-            action = "KEEP_OBSERVING"
-            decision_type = "observation_only"
-            recommended_next_step = "keep observing without strong intervention"
-        else:
-            action = "RETEST"
-            decision_type = "analysis_output"
-            recommended_next_step = "retest with adjusted variant or context"
-
 
     def run_feedback_loop(
         self,
