@@ -19,6 +19,7 @@ from services.decision_control_service import DecisionControlService
 from services.stuck_task_detector import StuckTaskDetector
 from services.stuck_task_handler import StuckTaskHandler
 from storage.db import DatabaseManager
+from core.system_guard import assert_valid_control_outcome, assert_has_required_feedback_fields
 from agentos.schemas.feedback_validator import validate_feedback_result
 from agents.performance_analysis_agent import PerformanceAnalysisInput, AssetPerformanceSnapshot
 from agents.performance_analysis_agent import PerformanceAnalysisAgent
@@ -75,6 +76,7 @@ class TaskService:
             variant_id=variant_id,
             analysis_result=analysis_result,
         )
+        assert_valid_control_outcome(control_bundle["control_outcome"])
 
         result["decision_record"] = control_bundle["decision_record"].to_dict()
         result["review_result"] = control_bundle["review_result"]
@@ -240,6 +242,7 @@ class TaskService:
                 },
             }
             
+            assert_has_required_feedback_fields(feedback_result)
             validate_feedback_result(feedback_result)
 
             return feedback_result
@@ -385,7 +388,5 @@ class TaskService:
         - does NOT auto-recover
         - only returns structured handling suggestions
         """
-        from agentos.schemas.feedback_validator import validate_feedback_result
 
-        validate_feedback_result(feedback_result)
         return self.stuck_task_handler.handle(tasks)

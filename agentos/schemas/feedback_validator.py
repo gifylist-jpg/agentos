@@ -1,7 +1,5 @@
-# agentos/schemas/feedback_validator.py
-
 from agentos.schemas.analysis import PerformanceAnalysisOutput, AssetAnalysisResult
-from agentos.schemas.control import ControlOutcome
+from agentos.schemas.control import ControlStatus
 
 
 def validate_feedback_result(feedback_result: dict):
@@ -10,9 +8,6 @@ def validate_feedback_result(feedback_result: dict):
     系统唯一对外结构必须合法
     """
 
-    # =========================
-    # 必须字段存在
-    # =========================
     required_keys = [
         "analysis_result",
         "primary_asset_result",
@@ -25,24 +20,25 @@ def validate_feedback_result(feedback_result: dict):
     for key in required_keys:
         assert key in feedback_result, f"[FEEDBACK ERROR] missing field: {key}"
 
-    # =========================
-    # 类型校验
-    # =========================
-    assert isinstance(feedback_result["analysis_result"], PerformanceAnalysisOutput)
-    assert isinstance(feedback_result["primary_asset_result"], AssetAnalysisResult)
+    assert isinstance(
+        feedback_result["analysis_result"], PerformanceAnalysisOutput
+    ), "[FEEDBACK ERROR] analysis_result must be PerformanceAnalysisOutput"
 
-    # =========================
-    # control_outcome 校验
-    # =========================
+    assert isinstance(
+        feedback_result["primary_asset_result"], AssetAnalysisResult
+    ), "[FEEDBACK ERROR] primary_asset_result must be AssetAnalysisResult"
+
     outcome = feedback_result["control_outcome"]
 
     assert isinstance(outcome, dict), "[FEEDBACK ERROR] control_outcome must be dict"
+    assert "status" in outcome, "[FEEDBACK ERROR] control_outcome missing status"
 
-    assert "status" in outcome
-    assert outcome["status"] in {"ALLOWED", "BLOCKED", "FROZEN"}
+    assert outcome["status"] in {
+        ControlStatus.ALLOWED,
+        ControlStatus.BLOCKED,
+        ControlStatus.FROZEN,
+    }, f"[FEEDBACK ERROR] invalid control_outcome status: {outcome['status']}"
 
-    # =========================
-    # 单一真相源（关键）
-    # =========================
-    assert feedback_result["decision_record"] is not None, \
+    assert feedback_result["decision_record"] is not None, (
         "[FEEDBACK ERROR] decision_record cannot be None"
+    )
