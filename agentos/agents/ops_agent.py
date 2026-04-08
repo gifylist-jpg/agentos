@@ -29,7 +29,7 @@ class OpsAgent:
         }
 
         # Using ExecutionAdapter to execute the task
-        execution_result = self.execution_adapter.execute(payload)
+        execution_result = self.execution_adapter.execute({"payload": payload})
 
         artifact = Artifact.create(
             project_id=task.project_id,
