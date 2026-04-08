@@ -7,4 +7,3 @@ class ToolExecutor:
 
     def execute(self, payload: dict) -> dict:
         return self.openclaw.run(payload)
-

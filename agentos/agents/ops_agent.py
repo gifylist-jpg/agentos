@@ -1,4 +1,5 @@
-from agentos.execution.tool_executor import ToolExecutor
+# 🚨 EXECUTION PATH VIOLATION - MUST MIGRATE TO ExecutionAdapter
+from agentos.execution.execution_adapter import ExecutionAdapter
 from agentos.models.artifact import Artifact
 
 
@@ -6,7 +7,8 @@ class OpsAgent:
     role_id = "ops_agent"
 
     def __init__(self) -> None:
-        self.tool_executor = ToolExecutor()
+        # Replacing ToolExecutor with ExecutionAdapter
+        self.execution_adapter = ExecutionAdapter()
 
     def run(self, task, message, state_manager, artifact_store):
         print(f"[Agent][RUN] role={self.role_id} task_id={task.task_id} msg_id={message.message_id}")
@@ -26,7 +28,8 @@ class OpsAgent:
             "content_output": content_output,
         }
 
-        execution_result = self.tool_executor.execute(payload)
+        # Using ExecutionAdapter to execute the task
+        execution_result = self.execution_adapter.execute(payload)
 
         artifact = Artifact.create(
             project_id=task.project_id,

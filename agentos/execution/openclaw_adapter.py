@@ -1,3 +1,4 @@
+# 🚨 LOW LEVEL ADAPTER ONLY - DO NOT CALL DIRECTLY
 class OpenClawAdapter:
     def run(self, payload: dict) -> dict:
         return {
