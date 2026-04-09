@@ -1,0 +1,114 @@
+Summary of execution_adapter.py:
+from agentos.execution.tool_executor import ToolExecutor
+from agentos.execution.openclaw_adapter import OpenClawAdapter
+
+class ExecutionAdapter:
+    """
+    ExecutionAdapter provides the unified entry point for execution.
+    It can route execution requests to the correct tool or adapter based on the request.
+    """
+
+    def __init__(self):
+        # Initialize ToolExecutor (or replace with other tool if needed)
+        self.tool_executor = ToolExecutor()
+
+    def execute(self, request: dict) -> dict:
+        if not isinstance(request, dict):
+            raise ValueError("Execution request must be a dictionary")
+
+        payload = request.get("payload")
+        if not isinstance(payload, dict):
+            raise ValueError("Execution request must contain a dict payload")
+----------------------------------
+Summary of tool_executor.py:
+from agentos.execution.openclaw_adapter import OpenClawAdapter
+
+
+class ToolExecutor:
+    def __init__(self) -> None:
+        self.openclaw = OpenClawAdapter()
+
+    def execute(self, payload: dict) -> dict:
+        return self.openclaw.run(payload)
+----------------------------------
+Summary of task_service_v2.py:
+----------------------------------
+Summary of ops_agent.py:
+# 🚨 EXECUTION PATH VIOLATION - MUST MIGRATE TO ExecutionAdapter
+from agentos.execution.execution_adapter import ExecutionAdapter
+from agentos.models.artifact import Artifact
+
+
+class OpsAgent:
+    role_id = "ops_agent"
+
+    def __init__(self) -> None:
+        # Replacing ToolExecutor with ExecutionAdapter
+        self.execution_adapter = ExecutionAdapter()
+
+    def run(self, task, message, state_manager, artifact_store):
+        print(f"[Agent][RUN] role={self.role_id} task_id={task.task_id} msg_id={message.message_id}")
+
+        content_output = message.payload
+        parsed = content_output.get("parsed", {}) if isinstance(content_output, dict) else {}
+        execution_plan = parsed.get("execution_plan", [])
+
+        payload = {
+----------------------------------
+Summary of execution_adapter.py:
+from agentos.execution.tool_executor import ToolExecutor
+from agentos.execution.openclaw_adapter import OpenClawAdapter
+
+class ExecutionAdapter:
+    """
+    ExecutionAdapter provides the unified entry point for execution.
+    It can route execution requests to the correct tool or adapter based on the request.
+    """
+
+    def __init__(self):
+        # Initialize ToolExecutor (or replace with other tool if needed)
+        self.tool_executor = ToolExecutor()
+
+    def execute(self, request: dict) -> dict:
+        if not isinstance(request, dict):
+            raise ValueError("Execution request must be a dictionary")
+
+        payload = request.get("payload")
+        if not isinstance(payload, dict):
+            raise ValueError("Execution request must contain a dict payload")
+----------------------------------
+Summary of tool_executor.py:
+from agentos.execution.openclaw_adapter import OpenClawAdapter
+
+
+class ToolExecutor:
+    def __init__(self) -> None:
+        self.openclaw = OpenClawAdapter()
+
+    def execute(self, payload: dict) -> dict:
+        return self.openclaw.run(payload)
+----------------------------------
+Summary of task_service_v2.py:
+----------------------------------
+Summary of ops_agent.py:
+# 🚨 EXECUTION PATH VIOLATION - MUST MIGRATE TO ExecutionAdapter
+from agentos.execution.execution_adapter import ExecutionAdapter
+from agentos.models.artifact import Artifact
+
+
+class OpsAgent:
+    role_id = "ops_agent"
+
+    def __init__(self) -> None:
+        # Replacing ToolExecutor with ExecutionAdapter
+        self.execution_adapter = ExecutionAdapter()
+
+    def run(self, task, message, state_manager, artifact_store):
+        print(f"[Agent][RUN] role={self.role_id} task_id={task.task_id} msg_id={message.message_id}")
+
+        content_output = message.payload
+        parsed = content_output.get("parsed", {}) if isinstance(content_output, dict) else {}
+        execution_plan = parsed.get("execution_plan", [])
+
+        payload = {
+----------------------------------

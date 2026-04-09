@@ -1,0 +1,6 @@
+/home/gifylist/agentos/app/agents/data_agent.py
+/home/gifylist/agentos/app/agents/content_agent.py
+/home/gifylist/agentos/app/agents/__init__.py
+/home/gifylist/agentos/app/agents/marketing_agent.py
+/home/gifylist/agentos/app/agents/performance_analysis_agent.py
+/home/gifylist/agentos/app/agents/research_agent.py
