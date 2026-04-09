@@ -57,3 +57,14 @@ class TaskServiceV2:
             "decision": decision,
             "execution": execution,
         }
+
+# Ensure that ExecutionAdapter is called with the right execution mode
+task_request = {
+    "payload": {
+        "execution_mode": "retry",  # Could be retry, delayed, scheduled
+        "retries": 3,
+        "retry_interval": 5,
+    }
+}
+execution_adapter.execute(task_request)
+execution_adapter = ExecutionAdapter()

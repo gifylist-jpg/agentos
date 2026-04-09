@@ -50,3 +50,13 @@ class OpsAgent:
             "artifact_ids": [artifact_id],
             "summary": "执行岗位已完成本地任务",
         }
+
+# Ensure that OpsAgent passes the correct execution mode to ExecutionAdapter
+ops_agent_request = {
+    "payload": {
+        "execution_mode": "delayed",  # Could be retry, delayed, scheduled
+        "delay_time": 10,
+    }
+}
+execution_adapter.execute(ops_agent_request)
+execution_adapter = ExecutionAdapter()
