@@ -1,107 +1,3 @@
-diff --git a/agentos/agents/ops_agent.py b/agentos/agents/ops_agent.py
-index abf0875..b6f5e19 100644
---- a/agentos/agents/ops_agent.py
-+++ b/agentos/agents/ops_agent.py
-@@ -2,12 +2,11 @@
- from agentos.execution.execution_adapter import ExecutionAdapter
- from agentos.models.artifact import Artifact
-
--
- class OpsAgent:
-     role_id = "ops_agent"
-
-     def __init__(self) -> None:
--        # Replacing ToolExecutor with ExecutionAdapter
-+        # 确保仅通过 ExecutionAdapter 执行任务
-         self.execution_adapter = ExecutionAdapter()
-
-     def run(self, task, message, state_manager, artifact_store):
-@@ -24,12 +23,11 @@ class OpsAgent:
-                 "准备视频素材",
-                 "整理剪辑步骤",
-                 "输出执行结果",
--            ],
--            "content_output": content_output,
-+            ]
-         }
-
--        # Using ExecutionAdapter to execute the task
--        execution_result = self.execution_adapter.execute({"payload": payload})
-+        # 统一执行入口：ExecutionAdapter
-+        execution_result = self.execution_adapter.execute({"payload": payload})
-
-         artifact = Artifact.create(
-             project_id=task.project_id,
-             task_id=task.task_id,
-             artifact_type="execution_result",
-             name="ops_execution_output",
-             content=execution_result,
-             created_by=self.role_id,
-         )
-
-         artifact_id = artifact_store.save(artifact)
-         state_manager.update_role_output(task.project_id, "ops", execution_result)
-         state_manager.append_artifact(task.project_id, artifact_id)
-
-         return {
-             "status": execution_result.get("status", "failed"),
-             "result": execution_result,
-             "artifact_ids": [artifact_id],
-             "summary": "执行岗位已完成本地任务",
-         }
--
--# Ensure that OpsAgent passes the correct execution mode to ExecutionAdapter
--ops_agent_request = {
--    "payload": {
--        "execution_mode": "delayed",  # Could be retry, delayed, scheduled
--        "delay_time": 10,
--    }
--}
--execution_adapter.execute(ops_agent_request)
--execution_adapter = ExecutionAdapter()
- 
-diff --git a/agentos/core/task/task_service_v2.py b/agentos/core/task/task_service_v2.py
-index 9b5b38439cb91ed77e1850d863f0cdd31fbf1079..1b5e5af7730ebbe5b548486a561a42d452b26f8a 100644
---- a/agentos/core/task/task_service_v2.py
-+++ b/agentos/core/task/task_service_v2.py
-@@ -36,35 +36,25 @@ class TaskServiceV2:
-     def _build_execution_request(self, task_data, decision: ApprovedDecision) -> dict:
-         task_type = task_data.get("task_type", "unknown_task")
-         steps = task_data.get("steps", [f"execute_{task_type}"])
-
-         return {
-             "payload": {
-                 "action": f"execute_{task_type}",
-                 "steps": steps,
-+                "execution_mode": decision.execution_mode,
-                 "decision": {
-                     "execution_mode": decision.execution_mode,
-                     "selected_candidate_id": decision.selected_candidate_id,
-                 },
-             }
-         }
-
-     def process_task_and_execute(self, task_data, manual_model=None):
-         decision = self.process_task(task_data, manual_model=manual_model)
-         request = self._build_execution_request(task_data, decision)
-         execution = self.execution_adapter.execute(request)
-
-         return {
-             "decision": decision,
-             "execution": execution,
-         }
-
--# Ensure that ExecutionAdapter is called with the right execution mode
--task_request = {
--    "payload": {
--        "execution_mode": "retry",  # Could be retry, delayed, scheduled
--        "retries": 3,
--        "retry_interval": 5,
--    }
--}
--execution_adapter.execute(task_request)
--execution_adapter = ExecutionAdapter()
-
 diff --git a/agentos/execution/execution_adapter.py b/agentos/execution/execution_adapter.py
 index 49d820cbda19d9805e4ea79d5792167f04141502..4cb054a9fc5c99a6d0c6fc87236e9e5fd08eab81 100644
 --- a/agentos/execution/execution_adapter.py
@@ -112,41 +8,41 @@ index 49d820cbda19d9805e4ea79d5792167f04141502..4cb054a9fc5c99a6d0c6fc87236e9e5f
  import time
  from agentos.execution.tool_executor import ToolExecutor
 -from agentos.execution.openclaw_adapter import OpenClawAdapter
- 
+
  # 确保日志目录存在
  log_dir = '/home/gifylist/agentos/app/logs'
  if not os.path.exists(log_dir):
      os.makedirs(log_dir)
- 
+
  # 配置日志
  logging.basicConfig(
      filename=os.path.join(log_dir, 'task_execution.log'),
      level=logging.INFO,
      format='%(asctime)s - %(levelname)s - %(message)s',
  )
- 
+
  class ExecutionAdapter:
      """
      ExecutionAdapter provides the unified entry point for execution.
      It can route execution requests to the correct tool or adapter based on the request.
      """
- 
+
      def __init__(self):
          self.tool_executor = ToolExecutor()
- 
+
      def execute(self, request: dict) -> dict:
          if not isinstance(request, dict):
              raise ValueError("Execution request must be a dictionary")
- 
+
          payload = request.get("payload")
          if not isinstance(payload, dict):
              raise ValueError("Execution request must contain a dict payload")
- 
+
          execution_mode = payload.get("execution_mode", "auto")
          task_id = payload.get("task_id")
- 
+
          logging.info(f"Task {task_id} started with execution mode: {execution_mode}")
- 
+
          try:
              if execution_mode == "auto":
                  result = self._handle_auto(payload)
@@ -166,15 +62,19 @@ index 49d820cbda19d9805e4ea79d5792167f04141502..4cb054a9fc5c99a6d0c6fc87236e9e5f
 +            normalized = self._normalize_execution_result(result)
 +            logging.info(f"Task {task_id} completed with result: {normalized}")
 +            return normalized
- 
+
          except Exception as e:
              logging.error(f"Task {task_id} failed: {str(e)}")
              return {"status": "failed", "message": f"Execution failed: {str(e)}"}
- 
+
+     def rollback_task(self, task_id):
+         # Rollback logic - fetch the previous state and restore it
+         logging.info(f"Rolling back task {task_id} to previous state.")
+         return {"status": "rolled_back", "message": "Task rolled back to previous state"}
+
 +    def _normalize_execution_result(self, result: dict) -> dict:
 +        if isinstance(result, dict) and "execution_result" in result and "status" in result:
 +            return result
-+        
 +        raw_status = result.get("status") if isinstance(result, dict) else None
 +        status_map = {
 +            "success": "SUCCESS",
@@ -185,24 +85,19 @@ index 49d820cbda19d9805e4ea79d5792167f04141502..4cb054a9fc5c99a6d0c6fc87236e9e5f
 +            "status": status_map.get(raw_status, "SUCCESS"),
 +            "execution_result": result,
 +        }
- 
-     def rollback_task(self, task_id):
-         # Rollback logic - fetch the previous state and restore it
-         logging.info(f"Rolling back task {task_id} to previous state.")
-         return {"status": "rolled_back", "message": "Task rolled back to previous state"}
- 
-+    def _handle_manual_execution(self, payload):
-+        return {
-+            "status": "failed",
-+            "message": "Manual execution requires human approval before running tools",
-+            "payload": payload,
-+        }
-+ 
+
+     def _handle_manual_execution(self, payload):
+         return {
+             "status": "failed",
+             "message": "Manual execution requires human approval before running tools",
+             "payload": payload,
+         }
+
      def _handle_retry(self, payload):
          retries = payload.get("retries", 3)
          retry_interval = payload.get("retry_interval", 5)
          task_id = payload.get("task_id")
- 
+
          for attempt in range(retries):
              try:
                  return self.tool_executor.execute(payload)
@@ -214,14 +109,12 @@ index 49d820cbda19d9805e4ea79d5792167f04141502..4cb054a9fc5c99a6d0c6fc87236e9e5f
                  else:
                      logging.info(f"Max retries reached, rolling back task {task_id}.")
                      return self.rollback_task(task_id)
- 
+
      def _handle_delayed(self, payload):
          delay_time = payload.get("delay_time", 10)
          time.sleep(delay_time)
          return self.tool_executor.execute(payload)
- 
+
      def _handle_scheduled(self, payload):
          schedule_time = payload.get("schedule_time")
          current_time = time.time()
- 
-EOF
