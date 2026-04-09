@@ -38,3 +38,7 @@ p1_backup_*
 setup_and_run.sh
 agentos/services/
 agentos/core/system_guard.py
+p0_backup_*
+p1_backup_*
+agentos-backup
+fix_execution_adapter.sh
