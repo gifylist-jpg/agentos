@@ -1,7 +1,7 @@
 import os
 import logging
 import time
-from agentos.execution.tool_executor import ToolExecutor
+from agentos.execution.tool_executor import ExecutionAdapter
 from agentos.execution.openclaw_adapter import OpenClawAdapter
 
 # 确保日志目录存在

@@ -1,7 +1,7 @@
 from agentos.execution.openclaw_adapter import OpenClawAdapter
 
 
-class ToolExecutor:
+class ExecutionAdapter:
     def __init__(self) -> None:
         self.openclaw = OpenClawAdapter()
 
