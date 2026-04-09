@@ -1,0 +1,16 @@
+./expand_execution_modes.sh:execution_adapter.execute(task_request)
+./expand_execution_modes.sh:execution_adapter.execute(ops_agent_request)
+./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./fix_execution_adapter.sh:echo "Step 1: 查找所有 execution_adapter.execute 引用"
+./fix_execution_adapter.sh:grep -R "execution_adapter.execute" . > execution_adapter_references.txt
+./fix_execution_adapter.sh:echo "所有 execution_adapter.execute 引用已记录到 execution_adapter_references.txt"
+./fix_execution_adapter.sh:  # 替换 tool_executor.execute 为 execution_adapter.execute
+./fix_execution_adapter.sh:  sed -i "s/tool_executor.execute/execution_adapter.execute/g" "$line"
+./fix_execution_adapter.sh:  echo "替换了 $line 中的 tool_executor.execute 为 execution_adapter.execute"
+./agentos/core/task/task_service_v2.py:        execution = self.execution_adapter.execute(request)
+./agentos/core/task/task_service_v2.py:execution_adapter.execute(task_request)
+./agentos/agents/ops_agent.py:        execution_result = self.execution_adapter.execute({"payload": payload})
+./agentos/agents/ops_agent.py:execution_adapter.execute(ops_agent_request)
+./ix_execution_adapter.sh:# Step 4: 确保所有 execution_adapter.execute 调用通过实例化对象来执行
+./ix_execution_adapter.sh:echo "确保所有 execution_adapter.execute 调用通过实例化对象..."
+./ix_execution_adapter.sh:find . -type f -name "*.py" -exec sed -i 's/execution_adapter.execute/execution_adapter.execute/g' {} \;

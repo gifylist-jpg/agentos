@@ -1,0 +1,17 @@
+./.pytest_cache/v/cache/nodeids:  "tests/test_execution_adapter.py::TestExecutionAdapter::test_execution_adapter",
+./.pytest_cache/v/cache/lastfailed:  "tests/test_execution_adapter.py::TestExecutionAdapter": true,
+./missing_initialization.txt:./execution_adapter_references.txt:./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./missing_initialization.txt:./tests/test_task_service_v2_execution.py:        mock_execution_adapter = MagicMock()
+./missing_initialization.txt:./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./missing_initialization.txt:./tests/test_task_service_v2_execution.py:        task_service.execution_adapter = mock_execution_adapter
+./missing_initialization.txt:./tests/test_execution_adapter.py:    def test_execution_adapter(self):
+./missing_initialization.txt:./fix_execution_adapter.sh:grep -R "test_" . | grep "execution_adapter" > test_files.txt
+./missing_initialization.txt:./fix_execution_adapter.sh:  echo "在 $test_file 中添加了 execution_adapter 实例化"
+./execution_adapter_references.txt:./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./tests/test_execution_adapter.py:    def test_execution_adapter(self):
+./fix_execution_adapter.sh:grep -R "test_" . | grep "execution_adapter" > test_files.txt
+./fix_execution_adapter.sh:echo "所有相关测试文件已记录到 test_files.txt"
+./fix_execution_adapter.sh:while IFS= read -r test_file; do
+./fix_execution_adapter.sh:  sed -i '1i\execution_adapter = ExecutionAdapter()' "$test_file"
+./fix_execution_adapter.sh:  echo "在 $test_file 中添加了 execution_adapter 实例化"
+./fix_execution_adapter.sh:done < test_files.txt

@@ -1,0 +1,64 @@
+./project_analysis/summaries.txt:Summary of execution_adapter.py:
+./project_analysis/summaries.txt:Summary of execution_adapter.py:
+./fix_main_chain_real.sh:if [ -f agentos/execution/core/execution_adapter.py ]; then
+./fix_main_chain_real.sh:  cp agentos/execution/core/execution_adapter.py "$TS_BACKUP_DIR/execution_adapter.py.bak"
+./fix_main_chain_real.sh:echo "=== 3. 修复 agentos/execution/core/execution_adapter.py ==="
+./fix_main_chain_real.sh:cat > agentos/execution/core/execution_adapter.py <<'PYEOF'
+./validate_execution_modes.sh:if grep -q "def execute(self, request: dict)" agentos/execution/execution_adapter.py; then
+./validate_execution_modes.sh:    if grep -q "retry" agentos/execution/execution_adapter.py && \
+./validate_execution_modes.sh:       grep -q "delayed" agentos/execution/execution_adapter.py && \
+./validate_execution_modes.sh:       grep -q "scheduled" agentos/execution/execution_adapter.py; then
+./expand_execution_modes.sh:EXECUTION_ADAPTER_FILE="$PROJECT_DIR/agentos/execution/execution_adapter.py"
+./expand_execution_modes.sh:execution_adapter.execute(task_request)
+./expand_execution_modes.sh:execution_adapter.execute(ops_agent_request)
+./execution_adapter_with_rollback.sh:cat <<EOL > agentos/execution/execution_adapter.py
+./execution_adapter_references.txt:./expand_execution_modes.sh:execution_adapter.execute(task_request)
+./execution_adapter_references.txt:./expand_execution_modes.sh:execution_adapter.execute(ops_agent_request)
+./execution_adapter_references.txt:./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./execution_adapter_references.txt:./fix_execution_adapter.sh:echo "Step 1: 查找所有 execution_adapter.execute 引用"
+./execution_adapter_references.txt:./fix_execution_adapter.sh:grep -R "execution_adapter.execute" . > execution_adapter_references.txt
+./execution_adapter_references.txt:./fix_execution_adapter.sh:echo "所有 execution_adapter.execute 引用已记录到 execution_adapter_references.txt"
+./execution_adapter_references.txt:./fix_execution_adapter.sh:  # 替换 tool_executor.execute 为 execution_adapter.execute
+./execution_adapter_references.txt:./fix_execution_adapter.sh:  sed -i "s/tool_executor.execute/execution_adapter.execute/g" "$line"
+./execution_adapter_references.txt:./fix_execution_adapter.sh:  echo "替换了 $line 中的 tool_executor.execute 为 execution_adapter.execute"
+./execution_adapter_references.txt:./agentos/core/task/task_service_v2.py:        execution = self.execution_adapter.execute(request)
+./execution_adapter_references.txt:./agentos/core/task/task_service_v2.py:execution_adapter.execute(task_request)
+./execution_adapter_references.txt:./agentos/agents/ops_agent.py:        execution_result = self.execution_adapter.execute({"payload": payload})
+./execution_adapter_references.txt:./agentos/agents/ops_agent.py:execution_adapter.execute(ops_agent_request)
+./execution_adapter_references.txt:./ix_execution_adapter.sh:# Step 4: 确保所有 execution_adapter.execute 调用通过实例化对象来执行
+./execution_adapter_references.txt:./ix_execution_adapter.sh:echo "确保所有 execution_adapter.execute 调用通过实例化对象..."
+./execution_adapter_references.txt:./ix_execution_adapter.sh:find . -type f -name "*.py" -exec sed -i 's/execution_adapter.execute/execution_adapter.execute/g' {} \;
+./.gitignore:fix_execution_adapter.sh
+./tests/test_task_service_v2_execution.py:        mock_execution_adapter = MagicMock()
+./tests/test_task_service_v2_execution.py:        mock_execution_adapter.execute.return_value = {
+./tests/test_task_service_v2_execution.py:        task_service.execution_adapter = mock_execution_adapter
+./tests/test_execution_adapter.py:    def test_execution_adapter(self):
+./fix_execution_adapter.sh:# 自动化脚本 - 修复 execution_adapter 问题
+./fix_execution_adapter.sh:echo "Step 1: 查找所有 execution_adapter.execute 引用"
+./fix_execution_adapter.sh:grep -R "execution_adapter.execute" . > execution_adapter_references.txt
+./fix_execution_adapter.sh:echo "所有 execution_adapter.execute 引用已记录到 execution_adapter_references.txt"
+./fix_execution_adapter.sh:# Step 2: 查找没有实例化 execution_adapter 的地方
+./fix_execution_adapter.sh:echo "没有实例化 execution_adapter 的地方已记录到 missing_initialization.txt"
+./fix_execution_adapter.sh:# Step 3: 自动替换未实例化的 execution_adapter
+./fix_execution_adapter.sh:# 替换 missing_initialization.txt 中的所有没有实例化 execution_adapter 的文件
+./fix_execution_adapter.sh:echo "正在替换未实例化 execution_adapter 的代码..."
+./fix_execution_adapter.sh:  # 确保每个文件中都初始化 execution_adapter
+./fix_execution_adapter.sh:  echo "在 $file 中添加了 execution_adapter 实例化"
+./fix_execution_adapter.sh:grep -R "test_" . | grep "execution_adapter" > test_files.txt
+./fix_execution_adapter.sh:# Step 5: 更新测试文件，确保 execution_adapter 在每个文件中都正确实例化
+./fix_execution_adapter.sh:  # 确保在测试文件中实例化 execution_adapter
+./fix_execution_adapter.sh:  echo "在 $test_file 中添加了 execution_adapter 实例化"
+./fix_execution_adapter.sh:# Step 6: 查找并替换所有 tool_executor 为 execution_adapter
+./fix_execution_adapter.sh:echo "正在替换 tool_executor 为 execution_adapter..."
+./fix_execution_adapter.sh:  # 替换 tool_executor.execute 为 execution_adapter.execute
+./fix_execution_adapter.sh:  sed -i "s/tool_executor.execute/execution_adapter.execute/g" "$line"
+./fix_execution_adapter.sh:  echo "替换了 $line 中的 tool_executor.execute 为 execution_adapter.execute"
+./fix_execution_adapter.sh:echo "所有修复已完成！请检查 execution_adapter_references.txt 和 missing_initialization.txt 以确认是否有遗漏。"
+./scan_project.sh:CORE_FILES=("execution_adapter.py" "tool_executor.py" "task_service_v2.py" "ops_agent.py")
+./agentos/core/task/task_service_v2.py:        execution = self.execution_adapter.execute(request)
+./agentos/core/task/task_service_v2.py:execution_adapter.execute(task_request)
+./agentos/agents/ops_agent.py:        execution_result = self.execution_adapter.execute({"payload": payload})
+./agentos/agents/ops_agent.py:execution_adapter.execute(ops_agent_request)
+./ix_execution_adapter.sh:# Step 4: 确保所有 execution_adapter.execute 调用通过实例化对象来执行
+./ix_execution_adapter.sh:echo "确保所有 execution_adapter.execute 调用通过实例化对象..."
+./ix_execution_adapter.sh:find . -type f -name "*.py" -exec sed -i 's/execution_adapter.execute/execution_adapter.execute/g' {} \;
