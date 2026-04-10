@@ -2,12 +2,12 @@
 
 # Step 1: 查找所有 ToolExecutor 的引用
 echo "查找所有 ToolExecutor 的引用..."
-grep -R "ToolExecutor.execute" . || { echo "未找到 ToolExecutor.execute 引用，停止执行"; exit 1; }
+grep -R "ExecutionAdapter.execute" . || { echo "未找到 ExecutionAdapter.execute 引用，停止执行"; exit 1; }
 
 # Step 2: 替换 ToolExecutor 为 ExecutionAdapter
 # 使用 sed 替换 ToolExecutor 的引用为 ExecutionAdapter
 echo "替换 ToolExecutor 为 ExecutionAdapter..."
-sed -i 's/ToolExecutor.execute/ExecutionAdapter.execute/g' $(grep -Rl "ToolExecutor.execute" .)
+sed -i 's/ExecutionAdapter.execute/ExecutionAdapter.execute/g' $(grep -Rl "ExecutionAdapter.execute" .)
 
 # Step 3: 修复 ExecutionAdapter 初始化问题
 # 查找所有 ExecutionAdapter 初始化错误并替换为正确的实例化

@@ -60,7 +60,7 @@ class TaskService:
         return asset_results[0] if asset_results else None
 
 
-    def run_feedback_loop(
+    def run_feedback_loop # LEGACY - DO NOT EXTEND(
         self,
         task: Task,
         publish_record: PublishRecord,
@@ -290,3 +290,5 @@ class TaskService:
         """
 
         return self.stuck_task_handler.handle(tasks)
+# 🚨 LEGACY MODULE
+# This module is a feedback pipeline only. DO NOT add new task-driven logic here.
