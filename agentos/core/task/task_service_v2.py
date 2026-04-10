@@ -2,6 +2,7 @@ from agentos.core.decision.multi_model_decision_service import MultiModelDecisio
 from agentos.core.decision.approved_decision import ApprovedDecision
 from agentos.core.decision.model_selector import ModelSelector
 from agentos.execution.execution_adapter import ExecutionAdapter
+from core.system_guard import assert_valid_control_outcome
 
 
 class TaskServiceV2:
@@ -27,7 +28,7 @@ class TaskServiceV2:
         # simple_task 强制 auto
         if task_data.get("task_type") == "simple_task":
             decision["execution_mode"] = "auto"
-
+        
         return ApprovedDecision(
             execution_mode=decision["execution_mode"],
             selected_candidate_id=decision["selected_candidate_id"],
@@ -53,9 +54,15 @@ class TaskServiceV2:
         request = self._build_execution_request(task_data, decision)
         execution = self.execution_adapter.execute(request)
 
+        assert_valid_control_outcome(
+            {
+                "status": execution.get("status", "unknown"),
+                "next_step": execution.get("next_step", "n/a"),
+                "reason": execution.get("message", "") or execution.get("reason", ""),
+            }
+        )
+
         return {
             "decision": decision,
             "execution": execution,
         }
-
-# Ensure that ExecutionAdapter is called with the right execution mode
