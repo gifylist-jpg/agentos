@@ -1,6 +1,6 @@
-# 🚨 EXECUTION PATH VIOLATION - MUST MIGRATE TO ExecutionAdapter
 from agentos.execution.execution_adapter import ExecutionAdapter
 from agentos.models.artifact import Artifact
+from core.system_guard import assert_valid_control_outcome
 
 class OpsAgent:
     role_id = "ops_agent"
@@ -23,11 +23,19 @@ class OpsAgent:
                 "准备视频素材",
                 "整理剪辑步骤",
                 "输出执行结果",
-            ]
+            ],
+            "content_output": content_output,
         }
 
         # 使用 ExecutionAdapter 执行任务
-        execution_result = self.execution_adapter.execute(payload)
+        execution_result = self.execution_adapter.execute({"payload": payload})
+        assert_valid_control_outcome(
+            {
+                "status": execution_result.get("status", "unknown"),
+                "next_step": execution_result.get("next_step", "n/a"),
+                "reason": execution_result.get("message", "") or execution_result.get("reason", ""),
+            }
+        )
 
         artifact = Artifact.create(
             project_id=task.project_id,
