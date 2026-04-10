@@ -1,8 +1,9 @@
 import os
 import logging
 import time
-from agentos.execution.tool_executor import ExecutionAdapter
-from agentos.execution.openclaw_adapter import OpenClawAdapter
+from agentos.execution.tool_executor import ToolExecutor
+# 替换 ToolExecutor 为 ExecutionAdapter
+from agentos.execution.execution_adapter import ExecutionAdapter
 
 # 确保日志目录存在
 log_dir = '/home/gifylist/agentos/app/logs'
@@ -23,7 +24,8 @@ class ExecutionAdapter:
     """
 
     def __init__(self):
-        self.tool_executor = ToolExecutor()
+        # 用 ExecutionAdapter 替代 ToolExecutor
+        self.execution_adapter = ExecutionAdapter()
 
     def execute(self, request: dict) -> dict:
         if not isinstance(request, dict):
@@ -52,17 +54,35 @@ class ExecutionAdapter:
             else:
                 result = {"status": "failed", "message": "Unknown execution mode"}
 
-            logging.info(f"Task {task_id} completed with result: {result}")
-            return result
+            # 标准化执行结果
+            normalized = self._normalize_execution_result(result)
+            logging.info(f"Task {task_id} completed with result: {normalized}")
+            return normalized
 
         except Exception as e:
             logging.error(f"Task {task_id} failed: {str(e)}")
             return {"status": "failed", "message": f"Execution failed: {str(e)}"}
 
-    def rollback_task(self, task_id):
-        # Rollback logic - fetch the previous state and restore it
-        logging.info(f"Rolling back task {task_id} to previous state.")
-        return {"status": "rolled_back", "message": "Task rolled back to previous state"}
+    def _normalize_execution_result(self, result: dict) -> dict:
+        if isinstance(result, dict) and "execution_result" in result and "status" in result:
+            return result
+        raw_status = result.get("status") if isinstance(result, dict) else None
+        status_map = {
+            "success": "SUCCESS",
+            "failed": "FAILED",
+            "rolled_back": "ROLLED_BACK",
+        }
+        return {
+            "status": status_map.get(raw_status, "SUCCESS"),
+            "execution_result": result,
+        }
+
+    def _handle_manual_execution(self, payload):
+        return {
+            "status": "failed",
+            "message": "Manual execution requires human approval before running tools",
+            "payload": payload,
+        }
 
     def _handle_retry(self, payload):
         retries = payload.get("retries", 3)
@@ -71,7 +91,7 @@ class ExecutionAdapter:
 
         for attempt in range(retries):
             try:
-                return self.tool_executor.execute(payload)
+                return self.execution_adapter.execute(payload)
             except Exception as e:
                 logging.error(f"Attempt {attempt+1} failed for task {task_id}: {str(e)}")
                 if attempt < retries - 1:
@@ -84,7 +104,7 @@ class ExecutionAdapter:
     def _handle_delayed(self, payload):
         delay_time = payload.get("delay_time", 10)
         time.sleep(delay_time)
-        return self.tool_executor.execute(payload)
+        return self.execution_adapter.execute(payload)
 
     def _handle_scheduled(self, payload):
         schedule_time = payload.get("schedule_time")
@@ -92,8 +112,12 @@ class ExecutionAdapter:
         time_diff = schedule_time - current_time
         if time_diff > 0:
             time.sleep(time_diff)
-        return self.tool_executor.execute(payload)
+        return self.execution_adapter.execute(payload)
 
     def _handle_auto(self, payload):
-        return self.tool_executor.execute(payload)
+        return self.execution_adapter.execute(payload)
 
+    def rollback_task(self, task_id):
+        # Rollback logic - fetch the previous state and restore it
+        logging.info(f"Rolling back task {task_id} to previous state.")
+        return {"status": "rolled_back", "message": "Task rolled back to previous state"}
