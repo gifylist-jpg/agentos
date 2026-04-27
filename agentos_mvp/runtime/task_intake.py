@@ -1,0 +1,245 @@
+from pathlib import Path
+import json
+import copy
+
+from agentos_mvp.schemas.task_request import TaskRequest
+
+
+DEFAULTS = {
+    "target_platform": "TikTok",
+    "target_duration": 15,
+    "objective": "带货转化",
+    "has_real_footage": False,
+    "ai_generation_needed": True,
+    "output_type": "video_sample",
+}
+
+REQUIRED_FIELDS = [
+    "task_id",
+    "goal",
+    "product_name",
+]
+
+ALLOWED_FIELDS = set(REQUIRED_FIELDS + list(DEFAULTS.keys()))
+
+
+def load_raw_tasks_from_json(path: str = "task.json"):
+    file_path = Path(path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"找不到任务文件: {path}")
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if isinstance(data, dict):
+        data = [data]
+
+    if not isinstance(data, list):
+        raise ValueError("task.json 必须是对象或对象数组")
+
+    return data
+
+
+def _coerce_bool(value, field_name: str):
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered == "true":
+            return True
+        if lowered == "false":
+            return False
+
+    raise ValueError(f"{field_name} 必须是布尔值")
+
+
+def _coerce_int(value, field_name: str):
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+
+    raise ValueError(f"{field_name} 必须是整数")
+
+
+def normalize_task_input(raw_task: dict):
+    if not isinstance(raw_task, dict):
+        raise ValueError("每个任务必须是 JSON 对象")
+
+    missing = [k for k in REQUIRED_FIELDS if k not in raw_task]
+    if missing:
+        raise ValueError(f"任务缺少必要字段: {missing}")
+
+    normalized = dict(raw_task)
+    auto_filled = {}
+
+    unknown_fields = [k for k in normalized.keys() if k not in ALLOWED_FIELDS]
+
+    for k, v in DEFAULTS.items():
+        if k not in normalized:
+            normalized[k] = v
+            auto_filled[k] = v
+
+    # 轻量类型纠正
+    normalized["target_duration"] = _coerce_int(
+        normalized["target_duration"], "target_duration"
+    )
+    normalized["has_real_footage"] = _coerce_bool(
+        normalized["has_real_footage"], "has_real_footage"
+    )
+    normalized["ai_generation_needed"] = _coerce_bool(
+        normalized["ai_generation_needed"], "ai_generation_needed"
+    )
+
+    return normalized, auto_filled, unknown_fields
+
+
+def validate_task_input(data: dict):
+    if not isinstance(data["task_id"], str) or not data["task_id"].strip():
+        raise ValueError("task_id 不能为空")
+
+    if not isinstance(data["goal"], str) or not data["goal"].strip():
+        raise ValueError("goal 不能为空")
+
+    if not isinstance(data["product_name"], str) or not data["product_name"].strip():
+        raise ValueError("product_name 不能为空")
+
+    if not isinstance(data["target_duration"], int):
+        raise ValueError("target_duration 必须是整数")
+
+    if data["target_duration"] <= 0:
+        raise ValueError("target_duration 必须 > 0")
+
+    if data["target_duration"] > 300:
+        raise ValueError("target_duration 不应超过 300 秒")
+
+    if not isinstance(data["has_real_footage"], bool):
+        raise ValueError("has_real_footage 必须是布尔值")
+
+    if not isinstance(data["ai_generation_needed"], bool):
+        raise ValueError("ai_generation_needed 必须是布尔值")
+
+    if not data["has_real_footage"] and not data["ai_generation_needed"]:
+        raise ValueError("既没有实拍，也不需要AI，任务无效")
+
+
+def build_confirmed_task(normalized: dict) -> TaskRequest:
+    task = TaskRequest(**normalized)
+
+    frozen_task = copy.deepcopy(task)
+    setattr(frozen_task, "_is_confirmed", True)
+
+    return frozen_task
+
+
+def render_task_summary(task: TaskRequest, auto_filled: dict, unknown_fields: list[str]):
+    print("\n=== Task Intake Summary ===")
+    print(f"任务ID: {task.task_id}")
+    print(f"目标: {task.goal}")
+    print(f"产品: {task.product_name}")
+    print(f"平台: {task.target_platform}")
+    print(f"时长: {task.target_duration}秒")
+    print(f"目标类型: {task.objective}")
+    print(f"有无实拍: {task.has_real_footage}")
+    print(f"是否需要AI生成: {task.ai_generation_needed}")
+    print(f"输出类型: {task.output_type}")
+
+    print("\n【系统补全项】")
+    if auto_filled:
+        for k, v in auto_filled.items():
+            print(f"- {k} = {v}")
+    else:
+        print("- 无")
+
+    print("\n【未知字段提示】")
+    if unknown_fields:
+        for field in unknown_fields:
+            print(f"- {field}（当前系统未使用）")
+    else:
+        print("- 无")
+
+    print("\n【输入层风险提示】")
+    risk_notes = []
+
+    if not task.has_real_footage and task.ai_generation_needed:
+        risk_notes.append("无实拍素材，将依赖 AI 生成。")
+
+    if task.target_duration <= 15:
+        risk_notes.append("视频时长较短，脚本表达空间有限。")
+
+    if not task.has_real_footage:
+        risk_notes.append("⚠️ 当前标记为无实拍素材，请避免后续使用真实视频素材。")
+
+    if task.has_real_footage and not task.ai_generation_needed:
+        risk_notes.append("⚠️ 当前仅依赖实拍素材，若素材不足可能影响视频完整性。")
+
+    if task.target_platform.lower() != "tiktok":
+        risk_notes.append("⚠️ 当前主链默认按 TikTok 风格处理，非 TikTok 平台后续可能需要单独适配。")
+
+    if risk_notes:
+        for note in risk_notes:
+            print(f"- {note}")
+    else:
+        print("- 无明显输入风险")
+
+
+def confirm_task(task: TaskRequest) -> bool:
+    while True:
+        answer = input("\n🚦 确认该任务进入主链？（y/n）: ").strip().lower()
+        if answer in ("y", "n"):
+            return answer == "y"
+        print("请输入 y 或 n")
+
+
+def prepare_tasks(path: str = "task.json"):
+    raw_tasks = load_raw_tasks_from_json(path)
+
+    prepared = []
+    seen_task_ids = set()
+    accepted_count = 0
+    rejected_count = 0
+    skipped_count = 0
+
+    for raw_task in raw_tasks:
+        try:
+            normalized, auto_filled, unknown_fields = normalize_task_input(raw_task)
+
+            task_id = normalized["task_id"]
+            if task_id in seen_task_ids:
+                raise ValueError(f"task_id 重复: {task_id}")
+            seen_task_ids.add(task_id)
+
+            validate_task_input(normalized)
+
+            temp_task = TaskRequest(**normalized)
+
+            print("\n==============================")
+            print(f"🧾 Task Intake: {temp_task.task_id}")
+            print("==============================")
+
+            render_task_summary(temp_task, auto_filled, unknown_fields)
+
+            if confirm_task(temp_task):
+                confirmed_task = build_confirmed_task(normalized)
+                prepared.append(confirmed_task)
+                accepted_count += 1
+            else:
+                print(f"⏭ 已跳过任务: {temp_task.task_id}")
+                skipped_count += 1
+
+        except Exception as e:
+            rejected_count += 1
+            print("\n❌ 任务输入错误，已拦截：")
+            print(raw_task)
+            print(f"错误原因: {e}")
+
+    print("\n=== Task Intake Report ===")
+    print(f"总任务数: {len(raw_tasks)}")
+    print(f"通过确认: {accepted_count}")
+    print(f"人工跳过: {skipped_count}")
+    print(f"输入拦截: {rejected_count}")
+
+    return prepared

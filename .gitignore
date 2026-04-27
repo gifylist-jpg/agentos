@@ -1,0 +1,17 @@
+# old / unrelated local files
+agentos_test_env/
+old_system_archive/
+videos/
+editor_agent.py
+
+# python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# local runtime/generated files
+agentos_mvp/runtime_data/
+agentos_mvp/*.json
