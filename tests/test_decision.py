@@ -1,5 +1,7 @@
-from typing import Any, Dict, List
+import sys
+sys.path.append('/home/gifylist/agentos_workspace')  # 确保 Python 能找到 agentos_mvp 模块
 
+from typing import Any, Dict, List
 from agentos_mvp.core.llm_adapter import LLMAdapter
 
 

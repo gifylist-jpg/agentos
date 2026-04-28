@@ -14,19 +14,22 @@ def _build_editor_output(task: Dict[str, Any], director_output: Dict[str, Any], 
 def make_decision(task: Dict[str, Any]) -> Dict[str, Any]:
     llm = LLMAdapter()
 
+    # Get director output
     director_output = _build_director_output(task, llm)
+    # Get editor output
     editor_output = _build_editor_output(task, director_output, llm)
 
-    # 只保留决策相关的字段，去掉多余的兼容字段
+    # Return the required fields, ensuring the compatibility and default values.
     return {
-        "video_angle": director_output["video_angle"],
-        "hooks": director_output["hooks"],
-        "primary_hook": director_output["primary_hook"],
-        "selling_points": director_output["selling_points"],
-        "script_outline": director_output["script_outline"],
-        "script": director_output["script"],  # 保留script，作为兼容字段
-        "storyboard": director_output["storyboard"],
-        "asset_plan": editor_output["asset_plan"],
-        "edit_plan": editor_output["edit_plan"],
-        "execution_plan": editor_output["execution_plan"],
+        "video_angle": director_output.get("video_angle", ""),
+        "hooks": director_output.get("hooks", []),
+        "primary_hook": director_output.get("primary_hook", ""),
+        "hook": director_output.get("hook", director_output.get("primary_hook", "")),  # Ensure compatibility with "hook"
+        "selling_points": director_output.get("selling_points", []),
+        "script_outline": director_output.get("script_outline", []),
+        "script": director_output.get("script", ""),  # Retain "script" for compatibility
+        "storyboard": director_output.get("storyboard", []),
+        "asset_plan": editor_output.get("asset_plan", []),
+        "edit_plan": editor_output.get("edit_plan", []),
+        "execution_plan": editor_output.get("execution_plan", []),
     }

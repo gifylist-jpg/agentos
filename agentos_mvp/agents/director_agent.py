@@ -12,11 +12,10 @@ class DirectorAgent:
 
     def _parse_result(self, result: Dict[str, Any]) -> Dict[str, Any]:
         parsed = result.get("parsed", {})
-        
+
         # Debugging output to check what's being returned from LLM
         print(f"Debugging parsed result: {parsed}")
 
-        # Extract primary_hook from hooks if not present in parsed result
         hooks = parsed.get("hooks", [])
         primary_hook = parsed.get("primary_hook", hooks[0] if hooks else "default hook")
 
