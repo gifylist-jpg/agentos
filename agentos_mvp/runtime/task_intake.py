@@ -1,245 +1,95 @@
-from pathlib import Path
 import json
-import copy
+import logging
+from typing import Dict, Any
+from agentos_mvp.core.llm_adapter import LLMAdapterError
+from agentos_mvp.core.llm_adapter import LLMAdapter
+from agentos_mvp.runtime.task_loader_v2 import load_tasks_from_json
 
-from agentos_mvp.schemas.task_request import TaskRequest
+# 日志配置
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
+class TaskIntakeError(Exception):
+    """自定义异常，处理任务输入错误"""
+    pass
 
-DEFAULTS = {
-    "target_platform": "TikTok",
-    "target_duration": 15,
-    "objective": "带货转化",
-    "has_real_footage": False,
-    "ai_generation_needed": True,
-    "output_type": "video_sample",
-}
+class TaskIntake:
+    def __init__(self, task_data: Dict[str, Any], model_name: str = "deepseek"):
+        """
+        初始化任务输入处理类
+        :param task_data: 任务数据
+        :param model_name: 选择调用的模型，默认是 deepseek
+        """
+        self.task_data = task_data
+        self.model_name = model_name
 
-REQUIRED_FIELDS = [
-    "task_id",
-    "goal",
-    "product_name",
-]
+    def validate_task_input(self):
+        """
+        任务数据验证，确保输入符合系统要求
+        """
+        required_fields = ['goal', 'product_name']
+        for field in required_fields:
+            if field not in self.task_data:
+                logger.error(f"Missing required field: {field}")  # 增加日志输出
+                raise TaskIntakeError(f"Missing required field: {field}")
 
-ALLOWED_FIELDS = set(REQUIRED_FIELDS + list(DEFAULTS.keys()))
+        logger.info(f"Task input validated: {self.task_data}")
 
+    def process_task_input(self) -> Dict[str, Any]:
+        """
+        处理任务输入，根据需要进行数据转换、模型选择等操作
+        """
+        # 验证任务输入
+        self.validate_task_input()
 
-def load_raw_tasks_from_json(path: str = "task.json"):
-    file_path = Path(path)
-
-    if not file_path.exists():
-        raise FileNotFoundError(f"找不到任务文件: {path}")
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    if isinstance(data, dict):
-        data = [data]
-
-    if not isinstance(data, list):
-        raise ValueError("task.json 必须是对象或对象数组")
-
-    return data
-
-
-def _coerce_bool(value, field_name: str):
-    if isinstance(value, bool):
-        return value
-
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered == "true":
-            return True
-        if lowered == "false":
-            return False
-
-    raise ValueError(f"{field_name} 必须是布尔值")
-
-
-def _coerce_int(value, field_name: str):
-    if isinstance(value, int) and not isinstance(value, bool):
-        return value
-
-    if isinstance(value, str) and value.strip().isdigit():
-        return int(value.strip())
-
-    raise ValueError(f"{field_name} 必须是整数")
-
-
-def normalize_task_input(raw_task: dict):
-    if not isinstance(raw_task, dict):
-        raise ValueError("每个任务必须是 JSON 对象")
-
-    missing = [k for k in REQUIRED_FIELDS if k not in raw_task]
-    if missing:
-        raise ValueError(f"任务缺少必要字段: {missing}")
-
-    normalized = dict(raw_task)
-    auto_filled = {}
-
-    unknown_fields = [k for k in normalized.keys() if k not in ALLOWED_FIELDS]
-
-    for k, v in DEFAULTS.items():
-        if k not in normalized:
-            normalized[k] = v
-            auto_filled[k] = v
-
-    # 轻量类型纠正
-    normalized["target_duration"] = _coerce_int(
-        normalized["target_duration"], "target_duration"
-    )
-    normalized["has_real_footage"] = _coerce_bool(
-        normalized["has_real_footage"], "has_real_footage"
-    )
-    normalized["ai_generation_needed"] = _coerce_bool(
-        normalized["ai_generation_needed"], "ai_generation_needed"
-    )
-
-    return normalized, auto_filled, unknown_fields
-
-
-def validate_task_input(data: dict):
-    if not isinstance(data["task_id"], str) or not data["task_id"].strip():
-        raise ValueError("task_id 不能为空")
-
-    if not isinstance(data["goal"], str) or not data["goal"].strip():
-        raise ValueError("goal 不能为空")
-
-    if not isinstance(data["product_name"], str) or not data["product_name"].strip():
-        raise ValueError("product_name 不能为空")
-
-    if not isinstance(data["target_duration"], int):
-        raise ValueError("target_duration 必须是整数")
-
-    if data["target_duration"] <= 0:
-        raise ValueError("target_duration 必须 > 0")
-
-    if data["target_duration"] > 300:
-        raise ValueError("target_duration 不应超过 300 秒")
-
-    if not isinstance(data["has_real_footage"], bool):
-        raise ValueError("has_real_footage 必须是布尔值")
-
-    if not isinstance(data["ai_generation_needed"], bool):
-        raise ValueError("ai_generation_needed 必须是布尔值")
-
-    if not data["has_real_footage"] and not data["ai_generation_needed"]:
-        raise ValueError("既没有实拍，也不需要AI，任务无效")
-
-
-def build_confirmed_task(normalized: dict) -> TaskRequest:
-    task = TaskRequest(**normalized)
-
-    frozen_task = copy.deepcopy(task)
-    setattr(frozen_task, "_is_confirmed", True)
-
-    return frozen_task
-
-
-def render_task_summary(task: TaskRequest, auto_filled: dict, unknown_fields: list[str]):
-    print("\n=== Task Intake Summary ===")
-    print(f"任务ID: {task.task_id}")
-    print(f"目标: {task.goal}")
-    print(f"产品: {task.product_name}")
-    print(f"平台: {task.target_platform}")
-    print(f"时长: {task.target_duration}秒")
-    print(f"目标类型: {task.objective}")
-    print(f"有无实拍: {task.has_real_footage}")
-    print(f"是否需要AI生成: {task.ai_generation_needed}")
-    print(f"输出类型: {task.output_type}")
-
-    print("\n【系统补全项】")
-    if auto_filled:
-        for k, v in auto_filled.items():
-            print(f"- {k} = {v}")
-    else:
-        print("- 无")
-
-    print("\n【未知字段提示】")
-    if unknown_fields:
-        for field in unknown_fields:
-            print(f"- {field}（当前系统未使用）")
-    else:
-        print("- 无")
-
-    print("\n【输入层风险提示】")
-    risk_notes = []
-
-    if not task.has_real_footage and task.ai_generation_needed:
-        risk_notes.append("无实拍素材，将依赖 AI 生成。")
-
-    if task.target_duration <= 15:
-        risk_notes.append("视频时长较短，脚本表达空间有限。")
-
-    if not task.has_real_footage:
-        risk_notes.append("⚠️ 当前标记为无实拍素材，请避免后续使用真实视频素材。")
-
-    if task.has_real_footage and not task.ai_generation_needed:
-        risk_notes.append("⚠️ 当前仅依赖实拍素材，若素材不足可能影响视频完整性。")
-
-    if task.target_platform.lower() != "tiktok":
-        risk_notes.append("⚠️ 当前主链默认按 TikTok 风格处理，非 TikTok 平台后续可能需要单独适配。")
-
-    if risk_notes:
-        for note in risk_notes:
-            print(f"- {note}")
-    else:
-        print("- 无明显输入风险")
-
-
-def confirm_task(task: TaskRequest) -> bool:
-    while True:
-        answer = input("\n🚦 确认该任务进入主链？（y/n）: ").strip().lower()
-        if answer in ("y", "n"):
-            return answer == "y"
-        print("请输入 y 或 n")
-
-
-def prepare_tasks(path: str = "task.json"):
-    raw_tasks = load_raw_tasks_from_json(path)
-
-    prepared = []
-    seen_task_ids = set()
-    accepted_count = 0
-    rejected_count = 0
-    skipped_count = 0
-
-    for raw_task in raw_tasks:
+        # 创建 LLMAdapter 实例，调用深度学习模型进行生成
         try:
-            normalized, auto_filled, unknown_fields = normalize_task_input(raw_task)
+            llm_adapter = LLMAdapter(model_name=self.model_name)
+            result = llm_adapter.generate(task_type="director", prompt=self._build_prompt())
+            return result
+        except LLMAdapterError as e:
+            logger.error(f"Error in LLM Adapter: {e}")
+            raise
 
-            task_id = normalized["task_id"]
-            if task_id in seen_task_ids:
-                raise ValueError(f"task_id 重复: {task_id}")
-            seen_task_ids.add(task_id)
+    def _build_prompt(self) -> str:
+        """
+        根据任务数据生成适合大模型调用的 prompt
+        :return: 拼接好的 prompt 字符串
+        """
+        task = self.task_data
+        prompt = (
+            f"goal={task.get('goal', '')}\n"
+            f"product_name={task.get('product_name', '')}\n"
+            "请输出 video_angle, hooks, selling_points, script_outline, storyboard"
+        )
+        logger.info(f"Prompt built: {prompt}")
+        return prompt
 
-            validate_task_input(normalized)
-
-            temp_task = TaskRequest(**normalized)
-
-            print("\n==============================")
-            print(f"🧾 Task Intake: {temp_task.task_id}")
-            print("==============================")
-
-            render_task_summary(temp_task, auto_filled, unknown_fields)
-
-            if confirm_task(temp_task):
-                confirmed_task = build_confirmed_task(normalized)
-                prepared.append(confirmed_task)
-                accepted_count += 1
-            else:
-                print(f"⏭ 已跳过任务: {temp_task.task_id}")
-                skipped_count += 1
-
+    def handle_task(self) -> Dict[str, Any]:
+        """
+        主方法：处理任务输入，调用决策层等模块
+        :return: 最终的任务结果
+        """
+        try:
+            result = self.process_task_input()
+            logger.info(f"Task processed successfully, result: {result}")
+            return result
+        except TaskIntakeError as e:
+            logger.error(f"Task intake error: {e}")
+            raise
         except Exception as e:
-            rejected_count += 1
-            print("\n❌ 任务输入错误，已拦截：")
-            print(raw_task)
-            print(f"错误原因: {e}")
+            logger.error(f"Unexpected error: {e}")
+            raise
 
-    print("\n=== Task Intake Report ===")
-    print(f"总任务数: {len(raw_tasks)}")
-    print(f"通过确认: {accepted_count}")
-    print(f"人工跳过: {skipped_count}")
-    print(f"输入拦截: {rejected_count}")
-
-    return prepared
+# 示例：初始化并处理任务输入
+if __name__ == "__main__":
+    task_data = {
+        "goal": "生成完整方案",
+        "product_name": "Test Product"
+    }
+    task_intake = TaskIntake(task_data)
+    try:
+        result = task_intake.handle_task()
+        logger.info(f"Final Task Result: {json.dumps(result, ensure_ascii=False)}")
+    except Exception as e:
+        logger.error(f"Task processing failed: {e}")

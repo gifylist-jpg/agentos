@@ -1,97 +1,120 @@
-from __future__ import annotations
-
-import json
-from typing import Any, Dict
-
+import requests
+from typing import Dict, Any
+from .settings import MODEL_CONFIG
 
 class LLMAdapterError(Exception):
+    """LLM Adapter 错误的自定义异常"""
     pass
 
-
 class LLMAdapter:
-    """
-    当前阶段的最小 LLM 适配层（mock 版）
-
-    目标：
-    - 只服务当前 decision.py 的接口需求
-    - 提供统一 generate(task_type, prompt) 方法
-    - 不接真实 LLM
-    - 不引入旧系统配置树
-    """
-
-    def __init__(self, enabled: bool = True) -> None:
+    def __init__(self, model_name: str = "deepseek", enabled: bool = True) -> None:
         self.enabled = enabled
+        self.model_name = model_name
+
+        # 获取模型的相关配置
+        if self.model_name not in MODEL_CONFIG:
+            raise LLMAdapterError(f"Model {self.model_name} is not supported.")
+
+        self.api_url = MODEL_CONFIG[self.model_name]["api_url"]
+        self.api_key = MODEL_CONFIG[self.model_name]["headers"]["Authorization"].replace("Bearer ", "")
+
+        # 如果是 DeepSeek 模型，添加 /v1/messages 路径
+        if self.model_name == "deepseek":
+            self.api_url = self.api_url.rstrip("/") + "/v1/messages"
 
     def generate(self, task_type: str, prompt: str) -> Dict[str, Any]:
-        """
-        统一返回结构：
-        {
-            "provider": str,
-            "model": str,
-            "content": str,
-            "parsed": dict,
-            "token_usage": int,
-            "cost": float,
-        }
-        """
+        """根据任务类型调用对应模型的 API 生成数据"""
         if not self.enabled:
             raise LLMAdapterError("LLM is disabled")
 
-        if task_type == "director":
-            parsed = self._mock_director_output(prompt)
-        elif task_type == "editor":
-            parsed = self._mock_editor_output(prompt)
-        else:
-            raise LLMAdapterError(f"Unsupported task_type: {task_type}")
+        model_call_method = getattr(self, f"_call_{self.model_name}_api", None)
 
-        return {
-            "provider": "mock",
-            "model": "mock-model",
-            "content": json.dumps(parsed, ensure_ascii=False),
-            "parsed": parsed,
-            "token_usage": 0,
-            "cost": 0.0,
+        # 如果没有特定模型方法，使用通用方法
+        if not model_call_method:
+            model_call_method = self._call_generic_api
+
+        return model_call_method(task_type, prompt)
+
+    def _call_deepseek_api(self, task_type: str, prompt: str) -> Dict[str, Any]:
+        """DeepSeek API调用"""
+        url = self.api_url
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "deepseek-chat",
+            "task_type": task_type,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000
+        }
+        return self._make_request(url, headers, payload)
+
+    def _call_gpt_api(self, task_type: str, prompt: str) -> Dict[str, Any]:
+        """GPT API调用"""
+        url = self.api_url
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "gpt-5.4",
+            "task_type": task_type,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000
+        }
+        return self._make_request(url, headers, payload)
+
+    def _call_claude_api(self, task_type: str, prompt: str) -> Dict[str, Any]:
+        """Claude API调用"""
+        url = self.api_url
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "claude-sonnet-4-5-20250929",
+            "task_type": task_type,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000
+        }
+        return self._make_request(url, headers, payload)
+
+    def _call_generic_api(self, task_type: str, prompt: str) -> Dict[str, Any]:
+        """通用 API 调用方法"""
+        url = self.api_url
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": f"{self.model_name}-chat",
+            "task_type": task_type,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000
+        }
+        return self._make_request(url, headers, payload)
+
+    def _make_request(self, url: str, headers: Dict[str, str], payload: Dict[str, Any]) -> Dict[str, Any]:
+        """发送请求并返回响应"""
+        proxies = {
+            "http": "http://127.0.0.1:7890",
+            "https": "http://127.0.0.1:7890"
         }
 
-    def _mock_director_output(self, prompt: str) -> Dict[str, Any]:
-        return {
-            "video_angle": "突出产品最值得展示的核心使用价值",
-            "hooks": [
-                "这个细节一出场就能抓住注意力",
-                "如果你也在意这个使用场景，这条一定要看",
-                "别急着划走，这个点很多人都会忽略",
-            ],
-            "selling_points": [
-                "卖点1：解决真实使用痛点",
-                "卖点2：适合短视频展示",
-            ],
-            "script_outline": [
-                "开场用主钩子快速抓注意力",
-                "展示产品核心细节与差异点",
-                "给出使用场景和行动召唤",
-            ],
-            "storyboard": [
-                "镜头1：产品快速出场并强调第一眼记忆点",
-                "镜头2：近景展示核心细节",
-                "镜头3：展示典型使用场景并收尾",
-            ],
-        }
+        try:
+            response = requests.post(url, headers=headers, json=payload, proxies=proxies, verify=False)
+            response.raise_for_status()
+            return self._parse_api_response(response.json())
+        except requests.exceptions.RequestException as e:
+            raise LLMAdapterError(f"Error calling {self.model_name} API: {e}")
 
-    def _mock_editor_output(self, prompt: str) -> Dict[str, Any]:
-        return {
-            "asset_plan": [
-                {"type": "hook_shot", "source": "ai_or_real"},
-                {"type": "detail_shot", "source": "ai_or_real"},
-                {"type": "usage_shot", "source": "ai_or_real"},
-            ],
-            "edit_plan": [
-                "前3秒快速进入主钩子画面",
-                "中段用细节镜头强化卖点",
-                "结尾用简洁CTA收束",
-            ],
-            "execution_plan": [
-                "准备开场钩子镜头素材",
-                "准备产品细节展示素材",
-                "准备使用场景展示素材",
-            ],
-        }
+    def _parse_api_response(self, api_response: Dict[str, Any]) -> Dict[str, Any]:
+        """解析 API 的返回结果，确保返回的数据格式符合预期"""
+        # 直接从响应中获取 'content' 字段
+        content = api_response.get("content", [])
+
+        if not content:
+            raise LLMAdapterError(f"Failed to parse API response: {api_response}")
+
+        return content
